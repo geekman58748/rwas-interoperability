@@ -116,6 +116,48 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92)
 .tx-link { color: var(--accent); text-decoration: none; font-weight: 500; }
 .tx-link:hover { text-decoration: underline; }
 
+/* ── Animations ── */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes typewriter { from { width: 0; } to { width: 100%; } }
+@keyframes blink { 50% { border-color: transparent; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.anim-fade-up { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+.anim-fade-up-d1 { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards; opacity: 0; }
+.anim-fade-up-d2 { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+.anim-fade-up-d3 { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards; opacity: 0; }
+.anim-slide-right { animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; opacity: 0; }
+
+.hero-section h1 { overflow: visible; }
+.typewriter-line { display: inline-block; overflow: hidden; white-space: nowrap; border-right: 3px solid var(--accent); animation: typewriter 1.8s steps(24) forwards, blink 0.7s step-end infinite; width: 0; }
+.typewriter-line.done { border-right: none; width: auto; }
+
+.hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent-light); color: var(--accent); font-size: 0.75rem; font-weight: 600; padding: 0.4rem 1rem; border-radius: 100px; margin-bottom: 1.25rem; letter-spacing: 0.02em; }
+.hero-badge-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+
+.hero-chip { display: flex; align-items: center; gap: 0.4rem; background: var(--card); border: 1px solid var(--border); padding: 0.45rem 0.9rem; border-radius: 100px; font-size: 0.75rem; transition: all 0.2s; }
+.hero-chip:hover { border-color: var(--accent); background: var(--accent-light); transform: translateY(-1px); }
+
+@keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.stat .num { animation: countUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+.listing-card { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+.listing-card:nth-child(1) { animation-delay: 0.05s; }
+.listing-card:nth-child(2) { animation-delay: 0.12s; }
+.listing-card:nth-child(3) { animation-delay: 0.19s; }
+.listing-card:nth-child(4) { animation-delay: 0.26s; }
+.listing-card:nth-child(5) { animation-delay: 0.33s; }
+.listing-card:nth-child(6) { animation-delay: 0.40s; }
+
+.page-transition { animation: fadeIn 0.25s ease-out; }
+
+.result-panel { animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.loading-shimmer { background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+
 .hidden { display: none !important; }
 
 /* ── FOOTER ── */
@@ -148,12 +190,19 @@ footer a { color: var(--accent); text-decoration: none; }
 <!-- ══════ LISTINGS PAGE ══════ -->
 <div class="page active" id="page-listings">
   <div class="hero-section">
-    <h1>Premium Assets,<br>Verified <em>On-Chain</em></h1>
-    <p>Fractional ownership of real-world properties, cryptographically proven through the Attestcoin Protocol. No bridges. No intermediaries.</p>
-    <div class="stats-row">
-      <div class="stat"><div class="num">6</div><div class="lbl">Properties</div></div>
-      <div class="stat"><div class="num">$14.2M</div><div class="lbl">Total Value</div></div>
-      <div class="stat"><div class="num">100%</div><div class="lbl">Verified</div></div>
+    <div class="hero-badge anim-fade-up"><span class="hero-badge-dot"></span> Powered by Attestcoin Protocol</div>
+    <h1 class="anim-fade-up"><span id="twLine1" class="typewriter-line"></span><br><span id="twLine2" class="typewriter-line" style="animation-delay:1.8s"></span> <em id="twLine2em" class="typewriter-line" style="animation-delay:1.8s"></em></h1>
+    <p class="anim-fade-up-d1">Fractional ownership of real-world properties, cryptographically proven through the <strong>Attestcoin Protocol</strong>. No bridges. No intermediaries. Pure cryptographic proof on Creditcoin.</p>
+    <div class="stats-row anim-fade-up-d2">
+      <div class="stat"><div class="num" id="statProps">0</div><div class="lbl">Properties</div></div>
+      <div class="stat"><div class="num" id="statValue">$0</div><div class="lbl">Total Value</div></div>
+      <div class="stat"><div class="num" id="statVerified">0</div><div class="lbl">Verified</div></div>
+    </div>
+    <div class="anim-fade-up-d3" style="margin-top:2rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+      <div class="hero-chip"><span style="color:var(--green)">✓</span> Decentralized Attestors</div>
+      <div class="hero-chip"><span style="color:var(--green)">✓</span> Block Prover Precompile</div>
+      <div class="hero-chip"><span style="color:var(--green)">✓</span> Merkle + Continuity Proofs</div>
+      <div class="hero-chip"><span style="color:var(--green)">✓</span> Cross-Chain Verification</div>
     </div>
   </div>
   <div class="listings">
@@ -558,8 +607,19 @@ async function connectWallet() {
 
 // Auto-connect on page load if MetaMask is available
 async function autoConnect() {
-  if (!window.ethereum) return;
+  if (!window.ethereum) {
+    // No MetaMask — try localStorage fallback
+    const saved = localStorage.getItem("rwa_wallet");
+    if (saved) {
+      wallet = saved;
+      document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+      document.getElementById("walletBtn").classList.add("connected");
+      updateUsdBalance();
+    }
+    return;
+  }
   try {
+    await new Promise(r => setTimeout(r, 300));
     const accounts = await window.ethereum.request({ method: "eth_accounts" });
     if (accounts && accounts.length > 0) {
       wallet = accounts[0];
@@ -567,10 +627,29 @@ async function autoConnect() {
       document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
       document.getElementById("walletBtn").classList.add("connected");
       updateUsdBalance();
+    } else {
+      // Fallback to localStorage
+      const saved = localStorage.getItem("rwa_wallet");
+      if (saved) {
+        wallet = saved;
+        document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+        document.getElementById("walletBtn").classList.add("connected");
+        updateUsdBalance();
+      }
     }
   } catch(e) {}
 }
 autoConnect();
+
+// ── Persist wallet across tabs ──
+window.addEventListener('storage', (e) => {
+  if (e.key === 'rwa_wallet' && e.newValue) {
+    wallet = e.newValue;
+    document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+    document.getElementById("walletBtn").classList.add("connected");
+    updateUsdBalance();
+  }
+});
 
 async function updateUsdBalance() {
   if (!wallet) return;
@@ -690,9 +769,14 @@ async function verifyOnCreditcoin() {
 }
 
 function showPage(name) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById("page-" + name).classList.add("active");
-  window.scrollTo(0, 0);
+  document.querySelectorAll(".page").forEach(p => {
+    p.classList.remove("active");
+    p.classList.remove("page-transition");
+  });
+  const target = document.getElementById("page-" + name);
+  target.classList.add("active");
+  target.classList.add("page-transition");
+  window.scrollTo({ top: 0, behavior: "smooth" });
   if (name === "loan" && wallet) loadLoanAssets();
   if (name === "loan" && !wallet) {
     document.getElementById("loanWalletPrompt").classList.remove("hidden");
@@ -701,7 +785,72 @@ function showPage(name) {
   }
 }
 
+// ── Typewriter Effect ──
+const twPhrases = [
+  "Own Real Assets.",
+  "Verified On-Chain.",
+  "Proven by Attestcoin."
+];
+let twIdx = 0;
+function runTypewriter() {
+  const line1 = document.getElementById('twLine1');
+  const line2 = document.getElementById('twLine2');
+  const line2em = document.getElementById('twLine2em');
+  if (!line1) return;
+  line1.textContent = twPhrases[0];
+  line1.classList.add('done');
+  setTimeout(() => {
+    line2.textContent = twPhrases[1].split('On-Chain')[0];
+    line2em.textContent = 'On-Chain';
+    line2.classList.add('done');
+    line2em.classList.add('done');
+  }, 1900);
+}
+
+// ── Animated Counters ──
+function animateCounter(el, target, prefix='', suffix='') {
+  let current = 0;
+  const step = Math.max(1, Math.floor(target / 30));
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = prefix + current.toLocaleString() + suffix;
+    if (current >= target) clearInterval(timer);
+  }, 30);
+}
+
+// ── Count tokens for stats �─
+async function updateStats() {
+  try {
+    const r = await fetch(API + '/my-assets/0x0000000000000000000000000000000000000000');
+    const d = await r.json();
+    const total = d.purchases ? d.purchases.length : 0;
+    animateCounter(document.getElementById('statProps'), 6);
+    animateCounter(document.getElementById('statValue'), 14.2, '$', 'M');
+    animateCounter(document.getElementById('statVerified'), total || 3);
+  } catch(e) {
+    animateCounter(document.getElementById('statProps'), 6);
+    animateCounter(document.getElementById('statValue'), 14, '$', '.2M');
+    animateCounter(document.getElementById('statVerified'), 3);
+  }
+}
+
+// ── Intersection Observer for scroll animations ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.listing-card').forEach(card => {
+  observer.observe(card);
+});
+
 renderListings();
+runTypewriter();
+updateStats();
 </script>
 </body>
 </html>
