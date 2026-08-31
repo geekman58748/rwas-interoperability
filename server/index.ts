@@ -351,80 +351,52 @@ app.get("/api/state/:wallet/:assetId", async (req, res) => {
 app.get("/api/my-assets/:wallet", async (req, res) => {
   try {
     const { sourceProvider: sp, creditcoinProvider: cp } = getProviders();
-    if (!ASSET_ADDRESS || !ASC_ADDRESS || !VRS_ADDRESS || !USD_ADDRESS) return res.json({ assets: [] });
+    if (!ASSET_ADDRESS || !ASC_ADDRESS || !VRS_ADDRESS) return res.json({ assets: [] });
 
     const wallet = req.params.wallet;
-    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
-    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, cp);
-    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, cp);
-    const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, sp);
+    const asset = new ethers.Contract(ASSET_ADDRESS, [
+      "function balanceOf(address) view returns (uint256)",
+      "function tokenOfOwnerByIndex(address,uint256) view returns (uint256)",
+      "function tokenTier(uint256) view returns (uint256)",
+      "function propertyName() view returns (string)",
+      "function propertyValue() view returns (uint256)",
+    ], sp);
+    const asc = new ethers.Contract(ASC_ADDRESS, [
+      "function isVerified(address,uint256) view returns (bool)",
+      "function getReceiptTokenId(address,uint256) view returns (uint256)",
+    ], cp);
+    const vrs = new ethers.Contract(VRS_ADDRESS, [
+      "function isValid(uint256) view returns (bool)",
+    ], cp);
 
-    // Get property info
     const name = await asset.propertyName();
     const value = await asset.propertyValue();
+    const balance = await asset.balanceOf(wallet);
 
-    // Check each tier for ownership
     const assets = [];
-    for (const tier of [10, 25, 50, 100]) {
+    for (let i = 0; i < Number(balance); i++) {
       try {
-        // Check if user has a token of this tier (scan recent tokens)
-        const balance = await asset.balanceOf(wallet);
-        if (Number(balance) > 0) {
-          // Get the first token
-          const tokenId = await asset.tokenOfOwnerByIndex(wallet, 0);
-          const tokenTier = await asset.tokenTier(tokenId);
-          if (Number(tokenTier) === tier) {
-            // Check verification status on Creditcoin
-            const verified = await asc.isVerified(wallet, tokenId);
-            let receiptValid = false;
-            let receiptId = null;
-            if (verified) {
-              receiptId = (await asc.getReceiptTokenId(wallet, tokenId)).toString();
-              receiptValid = await vrs.isValid(BigInt(receiptId));
-            }
-            assets.push({
-              tokenId: tokenId.toString(),
-              tier,
-              property: name,
-              value: ethers.formatEther(value),
-              tierValue: ethers.formatEther((BigInt(value) * BigInt(tier)) / 100n),
-              verified,
-              receiptId,
-              receiptValid,
-            });
-          }
-        }
-      } catch {}
-    }
-
-    // Also check tokens by scanning
-    try {
-      const balance = await asset.balanceOf(wallet);
-      for (let i = 0; i < Number(balance); i++) {
         const tokenId = await asset.tokenOfOwnerByIndex(wallet, i);
         const tier = await asset.tokenTier(tokenId);
-        const existing = assets.find(a => a.tokenId === tokenId.toString());
-        if (!existing) {
-          const verified = await asc.isVerified(wallet, tokenId);
-          let receiptValid = false;
-          let receiptId = null;
-          if (verified) {
-            receiptId = (await asc.getReceiptTokenId(wallet, tokenId)).toString();
-            receiptValid = await vrs.isValid(BigInt(receiptId));
-          }
-          assets.push({
-            tokenId: tokenId.toString(),
-            tier: Number(tier),
-            property: name,
-            value: ethers.formatEther(value),
-            tierValue: ethers.formatEther((BigInt(value) * BigInt(tier)) / 100n),
-            verified,
-            receiptId,
-            receiptValid,
-          });
+        const verified = await asc.isVerified(wallet, tokenId);
+        let receiptValid = false;
+        let receiptId = null;
+        if (verified) {
+          receiptId = (await asc.getReceiptTokenId(wallet, tokenId)).toString();
+          receiptValid = await vrs.isValid(BigInt(receiptId));
         }
-      }
-    } catch {}
+        assets.push({
+          tokenId: tokenId.toString(),
+          tier: Number(tier),
+          property: name,
+          value: ethers.formatEther(value),
+          tierValue: ethers.formatEther((BigInt(value) * BigInt(tier)) / 100n),
+          verified,
+          receiptId,
+          receiptValid,
+        });
+      } catch {}
+    }
 
     res.json({ assets, propertyName: name, propertyValue: ethers.formatEther(value) });
   } catch (err: any) {
