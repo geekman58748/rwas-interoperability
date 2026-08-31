@@ -33,15 +33,24 @@ const VRS_ADDRESS = process.env.CREDITCOIN_RECEIPT_TOKEN!;
 const ASSET_ADDRESS = process.env.SEPOLIA_ASSET_CONTRACT!;
 const SEPOLIA_CHAIN_KEY = 1;
 
-const sourceProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
-const creditcoinProvider = new ethers.JsonRpcProvider(CREDITCOIN_RPC);
+// Lazy providers — don't connect on import, connect on first use
+let sourceProvider: ethers.JsonRpcProvider;
+let creditcoinProvider: ethers.JsonRpcProvider;
+let signer: ethers.Wallet;
 
-if (!PRIVATE_KEY) {
-  console.error("FATAL: DEPLOYER_PRIVATE_KEY is not set!");
-  process.exit(1);
+function getProviders() {
+  if (!sourceProvider) {
+    sourceProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC || "https://ethereum-sepolia-rpc.publicnode.com");
+    creditcoinProvider = new ethers.JsonRpcProvider(CREDITCOIN_RPC || "https://rpc.cc3-testnet.creditcoin.network");
+    if (PRIVATE_KEY) {
+      signer = new ethers.Wallet(PRIVATE_KEY, creditcoinProvider);
+      console.log(`  Signer: ${signer.address}`);
+    } else {
+      console.error("  ⚠️  DEPLOYER_PRIVATE_KEY not set — minting disabled");
+    }
+  }
+  return { sourceProvider, creditcoinProvider, signer };
 }
-const signer = new ethers.Wallet(PRIVATE_KEY, creditcoinProvider);
-console.log(`  Signer: ${signer.address}`);
 
 // ── ABIs ──
 const ERC721_ABI = [
@@ -99,7 +108,7 @@ app.post("/api/mint", async (req, res) => {
     const { wallet, description } = req.body;
     if (!wallet) return res.status(400).json({ error: "wallet address required" });
 
-    const assetContract = new ethers.Contract(ASSET_ADDRESS, ERC721_ABI, signer);
+    const { signer: s } = getProviders(); const assetContract = new ethers.Contract(ASSET_ADDRESS, ERC721_ABI, s);
     const desc = description || "1% of Building #1";
     const tx = await assetContract.mint(wallet, desc);
     const receipt = await tx.wait();
@@ -187,7 +196,7 @@ app.post("/api/verify", async (req, res) => {
     const proofData = result.data!;
 
     // Verify via precompile
-    const blockProverInstance = new PrecompileBlockProver(creditcoinProvider);
+    const blockProverInstance = new PrecompileBlockProver(getProviders().creditcoinProvider);
     const isValid = await blockProverInstance.verifySingle(
       proofData.chainKey,
       proofData.headerNumber,
@@ -228,7 +237,7 @@ app.post("/api/prove-and-mint", async (req, res) => {
     const proofData = result.data!;
 
     // 2. Verify via precompile
-    const blockProverInstance = new PrecompileBlockProver(creditcoinProvider);
+    const blockProverInstance = new PrecompileBlockProver(getProviders().creditcoinProvider);
     const isValid = await blockProverInstance.verifySingle(
       proofData.chainKey,
       proofData.headerNumber,
@@ -241,11 +250,11 @@ app.post("/api/prove-and-mint", async (req, res) => {
     }
 
     // 3. Check before state
-    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, creditcoinProvider);
+    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, getProviders().creditcoinProvider);
     const beforeVerified = await asc.isVerified(wallet, assetIdNum);
 
     // 4. Mint receipt
-    const ascWrite = new ethers.Contract(ASC_ADDRESS, ASC_ABI, signer);
+    const ascWrite = new ethers.Contract(ASC_ADDRESS, ASC_ABI, getProviders().signer);
     const tx = await ascWrite.verifyAndMintReceipt(
       proofData.chainKey,
       proofData.headerNumber,
@@ -262,7 +271,7 @@ app.post("/api/prove-and-mint", async (req, res) => {
     const receiptId = await asc.getReceiptTokenId(wallet, assetIdNum);
 
     // 6. Get receipt details
-    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, creditcoinProvider);
+    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, getProviders().creditcoinProvider);
     let receiptDetails: any = {};
     if (receiptId > 0n) {
       receiptDetails = {
@@ -304,8 +313,8 @@ app.get("/api/state/:wallet/:assetId", async (req, res) => {
     const { wallet, assetId } = req.params;
     const assetIdNum = parseInt(assetId);
 
-    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, creditcoinProvider);
-    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, creditcoinProvider);
+    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, getProviders().creditcoinProvider);
+    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, getProviders().creditcoinProvider);
 
     const verified = await asc.isVerified(wallet, assetIdNum);
     const details = await asc.getProofDetails(wallet, assetIdNum);
@@ -347,8 +356,8 @@ app.get("/api/state/:wallet/:assetId", async (req, res) => {
 // ══════════════════════════════════════════════
 app.get("/api/receipts", async (_req, res) => {
   try {
-    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, creditcoinProvider);
-    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, creditcoinProvider);
+    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, getProviders().creditcoinProvider);
+    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, getProviders().creditcoinProvider);
 
     // Get total supply
     let totalSupply = 0n;
