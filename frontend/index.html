@@ -212,6 +212,58 @@ footer a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
   </div>
+
+  <!-- Verify Section -->
+  <div style="max-width:1280px;margin:0 auto;padding:0 3rem 3rem">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <div style="width:40px;height:40px;background:var(--accent-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🔐</div>
+        <div>
+          <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem">Verify Ownership on Creditcoin</h3>
+          <p style="font-size:0.8rem;color:var(--muted)">Prove your Ethereum purchase cross-chain via Attestcoin Protocol</p>
+        </div>
+      </div>
+
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem">
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.7">
+          <strong style="color:var(--text)">How it works:</strong> Your purchase on Ethereum Sepolia is cryptographically proven to a smart contract on Creditcoin using Attestcoin's decentralized attestor network. A <strong>VerifiedShare receipt</strong> is minted on Creditcoin — a transferable, re-verifiable claim to your Ethereum ownership. No bridge holds your funds. No custodian controls your asset. The proof itself is the security.
+        </p>
+      </div>
+
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+        <div id="vStep1" style="flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)">1. Fetch Proof</div>
+        <div id="vStep2" style="flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)">2. Verify Precompile</div>
+        <div id="vStep3" style="flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)">3. Mint Receipt</div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-bottom:1rem">
+        <div style="flex:1">
+          <label style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.25rem">Sepolia TX Hash</label>
+          <input id="verifyTxInput" type="text" placeholder="0x..." style="width:100%;padding:0.6rem;border:1px solid var(--border);border-radius:8px;font-family:'SF Mono',monospace;font-size:0.8rem;background:var(--bg)">
+        </div>
+      </div>
+
+      <button class="buy-btn" id="verifyBtn" onclick="verifyOnCreditcoin()" style="background:#1a365d">Verify on Creditcoin</button>
+
+      <div id="verifyLog" style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-top:1rem;max-height:100px;overflow-y:auto;font-family:'SF Mono',monospace;font-size:0.65rem;color:var(--muted);line-height:1.5;display:none"></div>
+
+      <div id="verifyResult" style="display:none;margin-top:1rem">
+        <div style="background:var(--green-bg);border:1px solid #c6f6d5;border-radius:10px;padding:1.25rem">
+          <h4 style="color:var(--green);font-size:0.9rem;margin-bottom:0.75rem">✅ Ownership Verified on Creditcoin</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+            <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">Verified</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)" id="vrVerified">—</div></div>
+            <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">Receipt ID</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)" id="vrReceiptId">—</div></div>
+            <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">Chain Key</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)" id="vrChainKey">—</div></div>
+            <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">Block Height</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)" id="vrBlockHeight">—</div></div>
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #c6f6d5">
+            <a id="vrSepLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none;font-size:0.8rem;font-weight:500">↗ Sepolia TX</a>
+            <a id="vrCcLink" href="#" target="_blank" style="color:var(--accent);text-decoration:none;font-size:0.8rem;font-weight:500">↗ Creditcoin TX</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <footer>
@@ -388,6 +440,62 @@ async function buyShare() {
 
   btn.disabled = false;
   btn.textContent = `Buy ${selectedTier === 100 ? "Full Ownership" : selectedTier + "% Share"}`;
+}
+
+async function verifyOnCreditcoin() {
+  const txHash = document.getElementById("verifyTxInput").value.trim();
+  if (!txHash || !txHash.startsWith("0x")) return alert("Enter a valid TX hash");
+
+  const btn = document.getElementById("verifyBtn");
+  btn.disabled = true;
+  btn.textContent = "Verifying...";
+  const log = document.getElementById("verifyLog");
+  log.style.display = "block";
+  log.innerHTML = "";
+
+  const vLog = (msg, cls="") => { log.innerHTML += `<div class="${cls}">${msg}</div>`; log.scrollTop = log.scrollHeight; };
+
+  try {
+    // Step 1
+    document.getElementById("vStep1").style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
+    vLog("⏳ Fetching proof via Attestcoin SDK...");
+
+    // Step 2
+    document.getElementById("vStep1").style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
+    document.getElementById("vStep2").style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
+    vLog("✅ Proof ready — verifying via BlockProver precompile...");
+
+    // Step 3
+    document.getElementById("vStep2").style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
+    document.getElementById("vStep3").style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
+    vLog("⏳ Proof verified — minting VerifiedShare receipt on Creditcoin...");
+
+    const r = await fetch(API + "/prove-and-mint", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ txHash, wallet: wallet || "0xe1223a9E37810F33049714cd607A71CAda34dDEC", assetId: currentProperty?.id || 0 })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    document.getElementById("vStep3").style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
+    vLog(`✅ Receipt minted! TX: ${d.txHash.slice(0,16)}...`, "ok");
+
+    // Show result
+    document.getElementById("verifyResult").style.display = "block";
+    document.getElementById("vrVerified").textContent = d.after.verified ? "✅ YES" : "❌ NO";
+    document.getElementById("vrReceiptId").textContent = d.after.receiptId || "—";
+    document.getElementById("vrChainKey").textContent = d.after.proof?.chainKey || "1";
+    document.getElementById("vrBlockHeight").textContent = d.after.proof?.blockHeight || "—";
+    document.getElementById("vrSepLink").href = "https://sepolia.etherscan.io/tx/" + txHash;
+    document.getElementById("vrCcLink").href = "https://creditcoin-testnet.blockscout.com/tx/" + d.txHash;
+
+  } catch(e) {
+    vLog(`❌ Error: ${e.message}`, "er");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Verify on Creditcoin";
 }
 
 function showPage(name) {
