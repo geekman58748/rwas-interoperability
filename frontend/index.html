@@ -380,7 +380,7 @@ async function loadLoanAssets() {
     document.getElementById("loanAssetsList").innerHTML = d.assets.map(a => `
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:0.75rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="selectBorrowAsset(${JSON.stringify(a).replace(/"/g, '&quot;')})">
         <div><div style="font-weight:600;font-size:0.95rem">${a.property}</div><div style="font-size:0.8rem;color:var(--muted)">${a.tier}% Share · Token #${a.tokenId}</div></div>
-        <div style="text-align:right"><div style="font-weight:600;color:var(--accent)">$${Number(a.tierValue).toLocaleString()}</div><div style="font-size:0.7rem;color:${a.receiptValid ? 'var(--green)' : 'var(--muted)'}">${a.receiptValid ? '✅ Verified' : '⚠️ Not verified'}</div></div>
+        <div style="text-align:right"><div style="font-weight:600;color:var(--accent)">$${Number(a.tierValue).toLocaleString()}</div><div style="font-size:0.7rem;color:${a.receiptValid ? 'var(--green)' : 'var(--muted)'}">${a.receiptValid ? '✅ Verified' : '⚠️ Not verified'}</div>${!a.receiptValid && a.txHash ? `<button onclick="event.stopPropagation();verifyFromLoan('${a.txHash}',${a.tokenId})" style="margin-top:0.4rem;background:#1a365d;color:#fff;border:none;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.7rem;cursor:pointer;font-family:inherit">Verify</button>` : ''}</div>
       </div>
     `).join("");
   } catch(e) {}
@@ -403,6 +403,21 @@ function selectBorrowAsset(asset) {
     document.getElementById("borrowBtn").disabled = false;
   }
   document.getElementById("borrowPanelSection").scrollIntoView({ behavior: "smooth" });
+}
+
+async function verifyFromLoan(txHash, tokenId) {
+  if (!wallet) return connectWallet();
+  try {
+    const r = await fetch(API + "/prove-and-mint", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ txHash, wallet, assetId: tokenId })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    alert(`✅ Verified! Receipt #${d.after.receiptId}\nTX: https://creditcoin-testnet.blockscout.com/tx/${d.txHash}`);
+    loadLoanAssets(); // Refresh
+  } catch(e) { alert(`❌ ${e.message}`); }
 }
 
 async function borrowAgainstAsset() {
