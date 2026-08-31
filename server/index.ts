@@ -36,16 +36,19 @@ let sourceProvider: ethers.JsonRpcProvider;
 let creditcoinProvider: ethers.JsonRpcProvider;
 let signer: ethers.Wallet | null = null;
 
+let sepoliaSigner: ethers.Wallet | null = null;
+
 function getProviders() {
   if (!sourceProvider) {
     sourceProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
     creditcoinProvider = new ethers.JsonRpcProvider(CREDITCOIN_RPC);
     if (PRIVATE_KEY) {
       signer = new ethers.Wallet(PRIVATE_KEY, creditcoinProvider);
+      sepoliaSigner = new ethers.Wallet(PRIVATE_KEY, sourceProvider);
       console.log(`  Signer: ${signer.address}`);
     }
   }
-  return { sourceProvider, creditcoinProvider, signer };
+  return { sourceProvider, creditcoinProvider, signer, sepoliaSigner };
 }
 
 // ── ABIs ──
@@ -150,7 +153,7 @@ app.get("/api/usd-balance/:wallet", async (req, res) => {
 // ══════════════════════════════════════════════
 app.post("/api/faucet", async (req, res) => {
   try {
-    const { sourceProvider: sp, signer: s } = getProviders();
+    const { sourceProvider: sp, sepoliaSigner: s } = getProviders();
     if (!s || !USD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
 
     const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, s);
@@ -171,7 +174,7 @@ app.post("/api/buy", async (req, res) => {
     const { wallet, tier } = req.body;
     if (!wallet || !tier) return res.status(400).json({ error: "wallet and tier required" });
 
-    const { sourceProvider: sp, signer: s } = getProviders();
+    const { sourceProvider: sp, sepoliaSigner: s } = getProviders();
     if (!s || !ASSET_ADDRESS || !USD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
 
     // Get price
