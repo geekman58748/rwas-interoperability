@@ -434,6 +434,10 @@ async function buyShare() {
     `;
 
     updateUsdBalance();
+
+    // Auto-fill verify TX hash
+    document.getElementById("verifyTxInput").value = buyD.txHash;
+    document.getElementById("verifyTxInput").scrollIntoView({ behavior: "smooth", block: "center" });
   } catch(e) {
     document.getElementById("buyResult").innerHTML = `<div style="color:var(--red);font-size:0.85rem;margin-top:0.75rem">❌ ${e.message}</div>`;
   }
