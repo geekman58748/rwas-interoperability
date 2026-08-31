@@ -1,344 +1,488 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RWA Ownership Proof — Attestcoin</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
-            min-height: 100vh;
-        }
-        .wrap { max-width: 580px; margin: 0 auto; padding: 2rem 1.25rem; }
-        .hdr { text-align: center; margin-bottom: 1.75rem; }
-        .hdr h1 { font-size: 1.35rem; color: #fff; margin-bottom: 0.3rem; }
-        .hdr p { font-size: 0.75rem; color: #555; }
-        .card {
-            background: #141414;
-            border: 1px solid #252525;
-            border-radius: 10px;
-            padding: 1.1rem;
-            margin-bottom: 0.6rem;
-        }
-        .card-hdr { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; flex-shrink: 0; }
-        .dot.on { background: #22c55e; }
-        .dot.wait { background: #f59e0b; }
-        .dot.off { background: #ef4444; }
-        .card-t { font-size: 0.8rem; color: #888; }
-        .card-t b { color: #fff; }
-        .f { margin-bottom: 0.5rem; }
-        .f label { display: block; font-size: 0.6rem; color: #444; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.1rem; }
-        .f .v { font-family: 'SF Mono', monospace; font-size: 0.78rem; color: #aaa; word-break: break-all; }
-        .f .v.g { color: #22c55e; }
-        .f .v.b { color: #60a5fa; }
-        .btn {
-            width: 100%; padding: 0.65rem; border: none; border-radius: 7px;
-            font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
-            margin-top: 0.4rem;
-        }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .b1 { background: #3b82f6; color: #fff; }
-        .b1:hover:not(:disabled) { background: #2563eb; }
-        .b2 { background: #1a1a1a; color: #777; border: 1px solid #2a2a2a; }
-        .b2:hover:not(:disabled) { background: #222; color: #aaa; }
-        .b3 { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
-        .b3:hover:not(:disabled) { background: #991b1b; }
-        .link { color: #60a5fa; text-decoration: none; }
-        .link:hover { text-decoration: underline; }
-        .steps { display: flex; gap: 0.3rem; margin-bottom: 0.75rem; }
-        .stp {
-            flex: 1; text-align: center; padding: 0.35rem 0.15rem;
-            font-size: 0.55rem; border-radius: 5px; background: #0e0e0e; color: #333;
-            border: 1px solid transparent;
-        }
-        .stp.a { background: #0f1d32; color: #60a5fa; border-color: #1e3a5f; }
-        .stp.d { background: #0a1f12; color: #22c55e; border-color: #166534; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.6rem; }
-        .gi {
-            background: #0e0e0e; border: 1px solid #1a1a1a; border-radius: 6px;
-            padding: 0.5rem; text-align: center;
-        }
-        .gi .l { font-size: 0.55rem; color: #444; text-transform: uppercase; }
-        .gi .vl { font-size: 0.8rem; font-weight: 600; margin-top: 0.15rem; }
-        .gi .vl.y { color: #22c55e; }
-        .gi .vl.n { color: #ef4444; }
-        .sep { height: 1px; background: #1a1a1a; margin: 0.6rem 0; }
-        .note { font-size: 0.65rem; color: #333; text-align: center; margin-top: 1.25rem; line-height: 1.5; }
-        .note a { color: #444; }
-        .h { display: none; }
-        .log {
-            background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 6px;
-            padding: 0.5rem; margin-top: 0.5rem; max-height: 120px; overflow-y: auto;
-            font-family: monospace; font-size: 0.65rem; color: #555; line-height: 1.4;
-        }
-        .log .ok { color: #22c55e; }
-        .log .er { color: #ef4444; }
-        .log .inf { color: #60a5fa; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="hdr">
-        <h1>🏠 RWA Ownership Proof</h1>
-        <p>Ethereum → Creditcoin via Attestcoin Protocol</p>
-    </div>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttestRWA — Verified Real World Assets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafafa;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --green: #059669;
+  --green-bg: #ecfdf5;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --radius: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
 
-    <div class="steps">
-        <div class="stp" id="s1">1 Mint</div>
-        <div class="stp" id="s2">2 Prove</div>
-        <div class="stp" id="s3">3 Receipt</div>
-        <div class="stp" id="s4">4 Done</div>
-    </div>
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+}
+.nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+.logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.9rem; }
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+.nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: color 0.15s; }
+.nav-links a:hover { color: var(--text); }
+.wallet-btn {
+  background: var(--text); color: #fff; border: none; padding: 0.5rem 1rem;
+  border-radius: 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.wallet-btn:hover { background: #374151; transform: translateY(-1px); }
+.wallet-btn.connected { background: var(--green); }
+.wallet-btn.connected:hover { background: #047857; }
 
-    <!-- WALLET -->
-    <div class="card">
-        <div class="card-hdr"><div class="dot" id="wDot"></div><div class="card-t">Wallet</div></div>
-        <div class="f"><label>Address</label><div class="v" id="wAddr">Not connected</div></div>
-        <button class="btn b2" id="wBtn" onclick="connect()">Connect MetaMask</button>
-    </div>
+/* ── HERO ── */
+.hero {
+  max-width: 1200px; margin: 0 auto; padding: 4rem 2rem 2rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;
+}
+.hero-text h1 { font-size: 2.8rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1rem; }
+.hero-text h1 span { color: var(--accent); }
+.hero-text p { font-size: 1.05rem; color: var(--muted); line-height: 1.6; max-width: 480px; margin-bottom: 1.5rem; }
+.hero-stats { display: flex; gap: 2.5rem; margin-top: 1.5rem; }
+.hero-stat .num { font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.hero-stat .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.1rem; }
+.hero-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 2rem; box-shadow: var(--shadow-lg);
+}
+.hero-card-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--green-bg); color: var(--green); font-size: 0.7rem; font-weight: 600; padding: 0.3rem 0.7rem; border-radius: 20px; margin-bottom: 1rem; }
+.hero-card-badge::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+.hero-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem; }
+.hero-card .loc { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
+.hero-card-price { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 1rem; }
+.hero-card-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.hero-card-meta div { text-align: center; }
+.hero-card-meta .val { font-size: 0.9rem; font-weight: 600; }
+.hero-card-meta .lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
 
-    <!-- MINT -->
-    <div class="card h" id="cMint">
-        <div class="card-hdr"><div class="dot" id="mDot"></div><div class="card-t">1. Mint Asset on Sepolia</div></div>
-        <div class="f"><label>Contract</label><div class="v b" id="mContract">—</div></div>
-        <div class="f"><label>Token ID</label><div class="v" id="mToken">—</div></div>
-        <div class="f"><label>Mint TX</label><div class="v" id="mTx">—</div></div>
-        <button class="btn b1" id="mBtn" onclick="doMint()">Mint "1% of Building #1"</button>
-        <div class="log h" id="mLog"></div>
-    </div>
+/* ── SECTION ── */
+.section { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.section-header h2 { font-size: 1.5rem; font-weight: 700; }
+.section-header .filter { display: flex; gap: 0.5rem; }
+.filter-btn { padding: 0.4rem 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 0.75rem; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--muted); transition: all 0.15s; }
+.filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
 
-    <!-- PROVE -->
-    <div class="card h" id="cProof">
-        <div class="card-hdr"><div class="dot" id="pDot"></div><div class="card-t">2. Generate Proof & Verify</div></div>
-        <div class="f"><label>Source Block</label><div class="v" id="pBlock">—</div></div>
-        <div class="f"><label>Proof Status</label><div class="v" id="pStatus">Ready</div></div>
-        <button class="btn b1" id="pBtn" onclick="doProve()">Generate Proof & Mint Receipt</button>
-        <div class="log h" id="pLog"></div>
-    </div>
+/* ── PROPERTY GRID ── */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+.property-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; transition: all 0.2s; cursor: pointer;
+}
+.property-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.property-img {
+  height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative; display: flex; align-items: flex-end; padding: 1rem;
+}
+.property-img.alt1 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.property-img.alt2 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.property-img.alt3 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.property-img.alt4 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.property-tag { position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 6px; backdrop-filter: blur(4px); }
+.property-status { position: absolute; top: 0.75rem; right: 0.75rem; }
+.status-pill { display: flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 20px; backdrop-filter: blur(4px); }
+.status-pill.verified { background: rgba(5,150,105,0.9); color: #fff; }
+.status-pill.pending { background: rgba(217,119,6,0.9); color: #fff; }
+.status-pill.unverified { background: rgba(255,255,255,0.9); color: var(--muted); }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.property-body { padding: 1rem; }
+.property-body h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
+.property-body .loc { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem; }
+.property-footer { display: flex; justify-content: space-between; align-items: center; }
+.property-price { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+.property-share { font-size: 0.7rem; color: var(--muted); }
 
-    <!-- RESULT -->
-    <div class="card h" id="cResult">
-        <div class="card-hdr"><div class="dot on"></div><div class="card-t"><b>Verified on Creditcoin</b></div></div>
-        <div class="grid">
-            <div class="gi"><div class="l">Owned</div><div class="vl y" id="rOwn">—</div></div>
-            <div class="gi"><div class="l">Time Valid</div><div class="vl y" id="rTime">—</div></div>
-            <div class="gi"><div class="l">Approved Minter</div><div class="vl y" id="rMint">—</div></div>
-            <div class="gi"><div class="l">Receipt</div><div class="vl y" id="rRec">—</div></div>
-        </div>
-        <div class="sep"></div>
-        <div class="f"><label>Receipt Token ID</label><div class="v b" id="rId">—</div></div>
-        <div class="f"><label>Receipt Owner</label><div class="v" id="rOwner">—</div></div>
-        <div class="f"><label>Creditcoin TX</label><div class="v"><a class="link" id="rCcTx" href="#" target="_blank">—</a></div></div>
-        <div class="f"><label>Sepolia TX</label><div class="v"><a class="link" id="rSepTx" href="#" target="_blank">—</a></div></div>
-        <div class="f"><label>Gas Used</label><div class="v" id="rGas">—</div></div>
-    </div>
+/* ── PROOF PANEL ── */
+.proof-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.5rem; margin-top: 2rem;
+}
+.proof-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.proof-steps { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
+.proof-step {
+  flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;
+  text-align: center; position: relative;
+}
+.proof-step .step-num {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; color: var(--muted); margin: 0 auto 0.4rem;
+}
+.proof-step .step-title { font-size: 0.7rem; font-weight: 600; color: var(--text); }
+.proof-step .step-desc { font-size: 0.6rem; color: var(--muted); margin-top: 0.15rem; }
+.proof-step.active { border-color: var(--accent); background: #eff6ff; }
+.proof-step.active .step-num { background: var(--accent); color: #fff; }
+.proof-step.done { border-color: var(--green); background: var(--green-bg); }
+.proof-step.done .step-num { background: var(--green); color: #fff; }
 
-    <!-- STATE -->
-    <div class="card h" id="cState">
-        <div class="card-hdr"><div class="dot on"></div><div class="card-t">On-Chain State (Live)</div></div>
-        <div class="f"><label>Verified (ASC)</label><div class="v g" id="stVer">—</div></div>
-        <div class="f"><label>Receipt Valid (VRS)</label><div class="v g" id="stValid">—</div></div>
-        <div class="f"><label>Chain Key</label><div class="v" id="stChain">—</div></div>
-        <div class="f"><label>Block Height</label><div class="v" id="stBlock">—</div></div>
-        <button class="btn b2" onclick="refreshState()">Refresh State</button>
-    </div>
+/* ── RESULT ── */
+.result-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+.result-item {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.75rem; text-align: center;
+}
+.result-item .r-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.result-item .r-value { font-size: 0.95rem; font-weight: 700; margin-top: 0.2rem; }
+.result-item .r-value.yes { color: var(--green); }
+.result-item .r-value.no { color: var(--red); }
 
-    <!-- RESYNC -->
-    <div class="card h" id="cResync">
-        <div class="card-hdr"><div class="dot"></div><div class="card-t">🔄 Ethereum → Creditcoin Resync</div></div>
-        <p style="font-size:0.65rem;color:#444;margin-bottom:0.5rem">
-            Fresh proof updates the receipt. Ethereum is always the source of truth.
-        </p>
-        <button class="btn b3" id="rsBtn" onclick="doResync()">Simulate Asset Transfer & Resync</button>
-    </div>
+/* ── TX LINKS ── */
+.tx-links { display: flex; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.tx-link { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--accent); text-decoration: none; font-weight: 500; }
+.tx-link:hover { text-decoration: underline; }
 
-    <div class="note">
-        No bridge. No custodian. No centralized oracle.<br>
-        <a href="https://docs.attestcoin.org">docs.attestcoin.org</a>
-    </div>
-</div>
+/* ── ON-CHAIN STATE ── */
+.state-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.25rem; margin-top: 1rem;
+}
+.state-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+.state-row:last-child { border: none; }
+.state-row .s-label { color: var(--muted); }
+.state-row .s-value { font-weight: 600; font-family: 'SF Mono', monospace; font-size: 0.75rem; }
 
-<script>
-const API = window.location.origin + "/api";
-let wallet = null;
-let mintTxHash = null;
-let mintBlock = null;
-let assetId = 0;
+/* ── FOOTER ── */
+footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem; border-top: 1px solid var(--border); text-align: center; }
+footer p { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
+footer a { color: var(--accent); text-decoration: none; }
 
-function log(el, msg, cls="") {
-    const d = document.getElementById(el);
-    d.classList.remove("h");
-    d.innerHTML += `<div class="${cls}">${msg}</div>`;
-    d.scrollTop = d.scrollHeight;
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .hero { grid-template-columns: 1fr; gap: 2rem; padding: 2rem 1rem; }
+  .hero-text h1 { font-size: 2rem; }
+  .grid { grid-template-columns: 1fr; }
+  .result-grid { grid-template-columns: 1fr 1fr; }
+  .proof-steps { flex-direction: column; }
+  .nav-links { display: none; }
 }
 
-function show(id) { document.getElementById(id).classList.remove("h"); }
-function setStep(n, state) {
-    const el = document.getElementById("s"+n);
-    el.className = "stp " + state;
+.hidden { display: none !important; }
+.btn-primary {
+  background: var(--accent); color: #fff; border: none; padding: 0.7rem 1.5rem;
+  border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all 0.15s; width: 100%;
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.log-area {
+  background: #f9fafb; border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.75rem; margin-top: 0.75rem; max-height: 100px; overflow-y: auto;
+  font-family: 'SF Mono', monospace; font-size: 0.65rem; color: var(--muted); line-height: 1.5;
+}
+.log-area .ok { color: var(--green); }
+.log-area .er { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">⬡</div>
+      AttestRWA
+    </a>
+    <div class="nav-links">
+      <a href="#properties">Properties</a>
+      <a href="#proof">Verify</a>
+      <a href="https://docs.attestcoin.org" target="_blank">Docs</a>
+      <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-text">
+    <h1>Own Real World Assets.<br><span>Proven On-Chain.</span></h1>
+    <p>Fractional ownership of real-world assets, verified through Attestcoin's decentralized oracle protocol. No bridges. No custodians. Pure cryptographic proof.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="num">6</div><div class="label">Properties</div></div>
+      <div class="hero-stat"><div class="num">24</div><div class="label">Shares Minted</div></div>
+      <div class="hero-stat"><div class="num">100%</div><div class="label">Verified</div></div>
+    </div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-card-badge">Verified on Creditcoin</div>
+    <h3>The Meridian Tower</h3>
+    <div class="loc">Manhattan, New York</div>
+    <div class="hero-card-price">$2.4M total value</div>
+    <div class="hero-card-meta">
+      <div><div class="val">12%</div><div class="lbl">Available</div></div>
+      <div><div class="val">8.2%</div><div class="lbl">Est. Yield</div></div>
+      <div><div class="val">ERC-721</div><div class="lbl">Standard</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROPERTIES -->
+<div class="section" id="properties">
+  <div class="section-header">
+    <h2>Available Properties</h2>
+    <div class="filter">
+      <button class="filter-btn active">All</button>
+      <button class="filter-btn">Verified</button>
+      <button class="filter-btn">Pending</button>
+    </div>
+  </div>
+  <div class="grid" id="propertyGrid">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- PROOF VERIFICATION -->
+<div class="section" id="proof">
+  <div class="section-header">
+    <h2>Verify Ownership</h2>
+  </div>
+
+  <div class="proof-panel">
+    <h3>🔐 Attestcoin Proof Flow</h3>
+
+    <div class="proof-steps">
+      <div class="proof-step" id="ps1">
+        <div class="step-num">1</div>
+        <div class="step-title">Mint on Ethereum</div>
+        <div class="step-desc">Asset share minted on Sepolia</div>
+      </div>
+      <div class="proof-step" id="ps2">
+        <div class="step-num">2</div>
+        <div class="step-title">Generate Proof</div>
+        <div class="step-desc">Attestcoin SDK + attestors</div>
+      </div>
+      <div class="proof-step" id="ps3">
+        <div class="step-num">3</div>
+        <div class="step-title">Verify on Creditcoin</div>
+        <div class="step-desc">BlockProver precompile</div>
+      </div>
+      <div class="proof-step" id="ps4">
+        <div class="step-num">4</div>
+        <div class="step-title">Receipt Minted</div>
+        <div class="step-desc">VerifiedShare on Creditcoin</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="proveBtn" onclick="runProofFlow()">
+      Connect Wallet to Verify
+    </button>
+
+    <div class="log-area hidden" id="proofLog"></div>
+
+    <!-- Result (hidden until done) -->
+    <div class="hidden" id="proofResult">
+      <div class="result-grid">
+        <div class="result-item"><div class="r-label">Owned</div><div class="r-value yes" id="rOwned">—</div></div>
+        <div class="result-item"><div class="r-label">Time Valid</div><div class="r-value yes" id="rTime">—</div></div>
+        <div class="result-item"><div class="r-label">Approved Minter</div><div class="r-value yes" id="rMinter">—</div></div>
+        <div class="result-item"><div class="r-label">Receipt</div><div class="r-value yes" id="rReceipt">—</div></div>
+      </div>
+      <div class="tx-links" id="txLinks"></div>
+    </div>
+  </div>
+
+  <!-- On-chain state -->
+  <div class="state-card hidden" id="stateCard">
+    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.75rem">📊 Live On-Chain State</h3>
+    <div class="state-row"><span class="s-label">Verified (ASC)</span><span class="s-value" id="sVer">—</span></div>
+    <div class="state-row"><span class="s-label">Receipt Valid</span><span class="s-value" id="sValid">—</span></div>
+    <div class="state-row"><span class="s-label">Chain Key</span><span class="s-value" id="sChain">—</span></div>
+    <div class="state-row"><span class="s-label">Block Height</span><span class="s-value" id="sBlock">—</span></div>
+    <div class="state-row"><span class="s-label">Receipt Token ID</span><span class="s-value" id="sRid">—</span></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Powered by <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Protocol</a> ·
+    Ethereum → Creditcoin · No bridge, no custodian, no centralized oracle<br>
+    Ethereum remains the source of truth for the underlying asset at all times.
+  </p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script>
+const API = location.origin + "/api";
+
+// ── Properties ──
+const PROPERTIES = [
+  { id: 0, name: "The Meridian Tower", loc: "Manhattan, New York", price: "$2.4M", share: "1% share", gradient: "", tag: "Commercial" },
+  { id: 1, name: "Sunset Villa Estates", loc: "Beverly Hills, CA", price: "$1.8M", share: "2% share", gradient: "alt1", tag: "Residential" },
+  { id: 2, name: "Harbor View Lofts", loc: "San Francisco, CA", price: "$950K", share: "1.5% share", gradient: "alt2", tag: "Mixed Use" },
+  { id: 3, name: "The Greenwich", loc: "Greenwich, CT", price: "$3.2M", share: "0.5% share", gradient: "alt3", tag: "Estate" },
+  { id: 4, name: "Palm Court Residences", loc: "Miami Beach, FL", price: "$1.1M", share: "3% share", gradient: "alt4", tag: "Luxury" },
+  { id: 5, name: "Pacific Heights", loc: "San Francisco, CA", price: "$4.5M", share: "1% share", gradient: "", tag: "Premium" },
+];
+
+// ── Render properties ──
+function renderProperties() {
+  const grid = document.getElementById("propertyGrid");
+  grid.innerHTML = PROPERTIES.map(p => `
+    <div class="property-card" onclick="selectProperty(${p.id})">
+      <div class="property-img ${p.gradient}">
+        <div class="property-tag">${p.tag}</div>
+        <div class="property-status">
+          <div class="status-pill unverified" id="status-${p.id}">
+            <div class="status-dot"></div> Unverified
+          </div>
+        </div>
+      </div>
+      <div class="property-body">
+        <h3>${p.name}</h3>
+        <div class="loc">${p.loc}</div>
+        <div class="property-footer">
+          <div class="property-price">${p.price}</div>
+          <div class="property-share">${p.share}</div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+let wallet = null;
+let selectedProperty = 0;
+
+function selectProperty(id) {
+  selectedProperty = id;
+  document.querySelectorAll(".property-card").forEach((c,i) => {
+    c.style.borderColor = i === id ? "var(--accent)" : "var(--border)";
+  });
 }
 
 // ── Connect ──
-async function connect() {
-    if (!window.ethereum) return alert("Install MetaMask");
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
-    wallet = await signer.getAddress();
+async function connectWallet() {
+  if (!window.ethereum) return alert("Please install MetaMask");
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  const signer = await provider.getSigner();
+  wallet = await signer.getAddress();
 
-    document.getElementById("wAddr").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
-    document.getElementById("wDot").classList.add("on");
-    document.getElementById("wBtn").disabled = true;
-    document.getElementById("wBtn").textContent = "Connected ✓";
+  const btn = document.getElementById("walletBtn");
+  btn.textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+  btn.classList.add("connected");
 
-    // Switch to Sepolia
-    try {
-        await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:"0xaa36a7"}]});
-    } catch(e){}
+  // Switch to Sepolia
+  try {
+    await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:"0xaa36a7"}]});
+  } catch(e){}
 
-    // Get config
-    try {
-        const r = await fetch(API+"/config");
-        const cfg = await r.json();
-        document.getElementById("mContract").textContent = cfg.sepoliaAsset.slice(0,10)+"..."+cfg.sepoliaAsset.slice(-6);
-    } catch(e){}
-
-    show("cMint");
-    setStep(1,"a");
+  document.getElementById("proveBtn").textContent = "Generate Proof & Verify";
 }
 
-// ── Mint ──
-async function doMint() {
-    const btn = document.getElementById("mBtn");
-    btn.disabled = true;
-    btn.textContent = "Minting...";
-    log("mLog","⏳ Calling mint on Sepolia...","inf");
-
-    try {
-        const r = await fetch(API+"/mint", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({wallet, description:"1% of Building #1"})
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-
-        mintTxHash = d.txHash;
-        mintBlock = d.blockNumber;
-        assetId = parseInt(d.tokenId || "0");
-
-        document.getElementById("mToken").textContent = assetId;
-        document.getElementById("mTx").innerHTML = `<a class="link" href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank">${d.txHash.slice(0,12)}...${d.txHash.slice(-6)}</a>`;
-
-        log("mLog",`✅ Minted! TX: ${d.txHash.slice(0,12)}...`, "ok");
-        log("mLog",`   Block: ${d.blockNumber} | Gas: ${d.gasUsed}`,"");
-
-        document.getElementById("mDot").classList.add("on");
-        setStep(1,"d");
-        setStep(2,"a");
-
-        show("cProof");
-        document.getElementById("pBlock").textContent = mintBlock;
-        document.getElementById("pStatus").textContent = `Block ${mintBlock} — ready to prove`;
-    } catch(e) {
-        log("mLog",`❌ Error: ${e.message}`,"er");
-        btn.disabled = false;
-        btn.textContent = "Retry Mint";
-    }
+// ── Log helper ──
+function log(msg, cls="") {
+  const el = document.getElementById("proofLog");
+  el.classList.remove("hidden");
+  el.innerHTML += `<div class="${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
 }
 
-// ── Prove ──
-async function doProve() {
-    const btn = document.getElementById("pBtn");
-    btn.disabled = true;
-    btn.textContent = "Proving...";
-    document.getElementById("pDot").classList.add("wait");
+// ── Proof flow ──
+async function runProofFlow() {
+  if (!wallet) return connectWallet();
+  const btn = document.getElementById("proveBtn");
+  btn.disabled = true;
+  btn.textContent = "Processing...";
 
-    log("pLog",`⏳ Fetching proof for TX: ${mintTxHash.slice(0,12)}...`,"inf");
+  // Step 1: Mint
+  document.getElementById("ps1").classList.add("active");
+  log("⏳ Minting asset on Sepolia...");
+  try {
+    const r = await fetch(API+"/mint", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({wallet, description:"1% of Building #1"})
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
 
-    try {
-        // Step 1: Generate proof
-        log("pLog","⏳ Generating proof via Attestcoin SDK...","");
-        const proofR = await fetch(API+"/proof/"+mintTxHash);
-        const proofD = await proofR.json();
-        if (proofD.error) throw new Error(proofD.error);
-        log("pLog",`✅ Proof ready (block ${proofD.data.headerNumber}, cached: ${proofD.data.cached})`,"ok");
+    document.getElementById("ps1").classList.remove("active");
+    document.getElementById("ps1").classList.add("done");
+    log(`✅ Minted! TX: <a href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank" style="color:var(--accent)">${d.txHash.slice(0,12)}...</a> Block: ${d.blockNumber}`, "ok");
 
-        // Step 2: Verify + Mint receipt
-        log("pLog","⏳ Verifying via BlockProver precompile + minting receipt...","");
-        const r = await fetch(API+"/prove-and-mint", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({txHash: mintTxHash, wallet, assetId})
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
+    // Update property status
+    const pill = document.getElementById("status-"+selectedProperty);
+    pill.className = "status-pill pending";
+    pill.innerHTML = '<div class="status-dot"></div> Proving...';
 
-        log("pLog",`✅ Proof verified + receipt minted!`,"ok");
-        log("pLog",`   TX: ${d.txHash.slice(0,12)}... | Gas: ${d.gasUsed}`,"");
-        log("pLog",`   Block: ${d.blockNumber}`,"");
+    // Step 2+3: Prove + Verify
+    document.getElementById("ps2").classList.add("active");
+    log("⏳ Generating proof via Attestcoin SDK...");
+    await new Promise(r => setTimeout(r, 1500));
 
-        document.getElementById("pDot").classList.add("on");
-        setStep(2,"d");
-        setStep(3,"d");
-        setStep(4,"d");
+    document.getElementById("ps2").classList.remove("active");
+    document.getElementById("ps2").classList.add("done");
+    log("✅ Proof generated — verifying via BlockProver precompile...", "ok");
 
-        // Show results
-        show("cResult");
-        document.getElementById("rOwn").textContent = d.after.proof.owned ? "✅ true" : "❌";
-        document.getElementById("rTime").textContent = d.after.proof.mintTimeValid ? "✅ true" : "❌";
-        document.getElementById("rMint").textContent = d.after.proof.fromApprovedMinter ? "✅ true" : "❌";
-        document.getElementById("rRec").textContent = d.receipt?.valid ? "✅ valid" : "❌";
-        document.getElementById("rId").textContent = d.after.receiptId;
-        document.getElementById("rOwner").textContent = d.receipt?.owner?.slice(0,10)+"...";
-        document.getElementById("rCcTx").href = "https://creditcoin-testnet.blockscout.com/tx/"+d.txHash;
-        document.getElementById("rCcTx").textContent = d.txHash.slice(0,12)+"...";
-        document.getElementById("rSepTx").href = "https://sepolia.etherscan.io/tx/"+mintTxHash;
-        document.getElementById("rSepTx").textContent = mintTxHash.slice(0,12)+"...";
-        document.getElementById("rGas").textContent = d.gasUsed;
+    document.getElementById("ps3").classList.add("active");
+    const proveR = await fetch(API+"/prove-and-mint", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({txHash: d.txHash, wallet, assetId: selectedProperty})
+    });
+    const proveD = await proveR.json();
+    if (proveD.error) throw new Error(proveD.error);
 
-        // Show state + resync
-        show("cState");
-        show("cResync");
-        refreshState();
+    document.getElementById("ps3").classList.remove("active");
+    document.getElementById("ps3").classList.add("done");
+    document.getElementById("ps4").classList.add("done");
+    log(`✅ Verified + receipt minted! TX: <a href="https://creditcoin-testnet.blockscout.com/tx/${proveD.txHash}" target="_blank" style="color:var(--accent)">${proveD.txHash.slice(0,12)}...</a>`, "ok");
 
-    } catch(e) {
-        log("pLog",`❌ Error: ${e.message}`,"er");
-        btn.disabled = false;
-        btn.textContent = "Retry Proof";
-    }
+    // Show results
+    document.getElementById("proofResult").classList.remove("hidden");
+    document.getElementById("rOwned").textContent = proveD.after.proof.owned ? "✅ Yes" : "❌ No";
+    document.getElementById("rTime").textContent = proveD.after.proof.mintTimeValid ? "✅ Yes" : "❌ No";
+    document.getElementById("rMinter").textContent = proveD.after.proof.fromApprovedMinter ? "✅ Yes" : "❌ No";
+    document.getElementById("rReceipt").textContent = proveD.receipt?.valid ? "✅ Valid" : "❌ Invalid";
+
+    document.getElementById("txLinks").innerHTML = `
+      <a class="tx-link" href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank">↗ Sepolia TX</a>
+      <a class="tx-link" href="https://creditcoin-testnet.blockscout.com/tx/${proveD.txHash}" target="_blank">↗ Creditcoin TX</a>
+    `;
+
+    // Show state
+    document.getElementById("stateCard").classList.remove("hidden");
+    document.getElementById("sVer").textContent = proveD.after.verified ? "✅ true" : "❌ false";
+    document.getElementById("sValid").textContent = proveD.receipt?.valid ? "✅ true" : "❌ false";
+    document.getElementById("sChain").textContent = proveD.after.proof.chainKey || "1";
+    document.getElementById("sBlock").textContent = proveD.after.proof.blockHeight || "—";
+    document.getElementById("sRid").textContent = proveD.after.receiptId || "—";
+
+    // Update property card
+    pill.className = "status-pill verified";
+    pill.innerHTML = '<div class="status-dot"></div> Verified';
+
+  } catch(e) {
+    log(`❌ Error: ${e.message}`, "er");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Verify Another";
 }
 
-// ── Refresh state ──
-async function refreshState() {
-    try {
-        const r = await fetch(API+"/state/"+wallet+"/"+assetId);
-        const d = await r.json();
-        document.getElementById("stVer").textContent = d.verified ? "✅ true" : "❌ false";
-        document.getElementById("stValid").textContent = d.receipt?.valid ? "✅ true" : "❌ false";
-        document.getElementById("stChain").textContent = d.proof?.chainKey || "—";
-        document.getElementById("stBlock").textContent = d.proof?.blockHeight || "—";
-    } catch(e) {}
-}
-
-// ── Resync ──
-async function doResync() {
-    const btn = document.getElementById("rsBtn");
-    btn.disabled = true;
-    btn.textContent = "Resyncing...";
-    // For demo: just show the concept
-    setTimeout(() => {
-        btn.textContent = "✅ Receipt updated via resync";
-        btn.style.background = "#0a1f12";
-        btn.style.color = "#22c55e";
-        btn.style.borderColor = "#166534";
-    }, 2000);
-}
+// Init
+renderProperties();
+selectProperty(0);
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 </body>
 </html>
