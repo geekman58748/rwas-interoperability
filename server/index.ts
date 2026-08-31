@@ -177,16 +177,17 @@ app.post("/api/buy", async (req, res) => {
     const { sourceProvider: sp, sepoliaSigner: s } = getProviders();
     if (!s || !ASSET_ADDRESS || !USD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
 
-    // Get price
-    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
-    const price = await asset.tierPrice(tier);
+    // Get price (read-only)
+    const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
+    const price = await assetRead.tierPrice(tier);
 
     // Approve USD spending
     const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, s);
     const approveTx = await usd.approve(ASSET_ADDRESS, price, { gasLimit: 100000 });
     await approveTx.wait();
 
-    // Buy share
+    // Buy share (needs signer)
+    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, s);
     const buyTx = await asset.buyShare(tier, { gasLimit: 500000 });
     const receipt = await buyTx.wait();
 
