@@ -35,7 +35,13 @@ const SEPOLIA_CHAIN_KEY = 1;
 
 const sourceProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
 const creditcoinProvider = new ethers.JsonRpcProvider(CREDITCOIN_RPC);
+
+if (!PRIVATE_KEY) {
+  console.error("FATAL: DEPLOYER_PRIVATE_KEY is not set!");
+  process.exit(1);
+}
 const signer = new ethers.Wallet(PRIVATE_KEY, creditcoinProvider);
+console.log(`  Signer: ${signer.address}`);
 
 // ── ABIs ──
 const ERC721_ABI = [
@@ -117,7 +123,8 @@ app.post("/api/mint", async (req, res) => {
       gasUsed: receipt.gasUsed.toString(),
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error("Mint error:", err);
+    res.status(500).json({ error: err.message || err.shortMessage || String(err) });
   }
 });
 
