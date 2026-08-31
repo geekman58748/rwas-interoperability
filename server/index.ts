@@ -29,6 +29,7 @@ const ASC_ADDRESS = process.env.CREDITCOIN_ASC_CONTRACT;
 const VRS_ADDRESS = process.env.CREDITCOIN_RECEIPT_TOKEN;
 const ASSET_ADDRESS = process.env.SEPOLIA_ASSET_CONTRACT;
 const USD_ADDRESS = process.env.SEPOLIA_USD_TOKEN;
+const CUSD_ADDRESS = process.env.SEPLIA_CUSD_TOKEN || process.env.SEPOLIA_CUSD_TOKEN;
 const SEPOLIA_CHAIN_KEY = 1;
 
 // Lazy providers
@@ -341,6 +342,146 @@ app.get("/api/state/:wallet/:assetId", async (req, res) => {
     res.json({ verified, proof: { owned: details.owned, mintTimeValid: details.mintTimeValid, fromApprovedMinter: details.fromApprovedMinter, chainKey: details.chainKey.toString(), blockHeight: details.blockHeight.toString(), txHash: details.txHash }, receipt });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ══════════════════════════════════════════════
+//  Get user's purchased assets (on-chain)
+// ══════════════════════════════════════════════
+app.get("/api/my-assets/:wallet", async (req, res) => {
+  try {
+    const { sourceProvider: sp, creditcoinProvider: cp } = getProviders();
+    if (!ASSET_ADDRESS || !ASC_ADDRESS || !VRS_ADDRESS || !USD_ADDRESS) return res.json({ assets: [] });
+
+    const wallet = req.params.wallet;
+    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
+    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, cp);
+    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, cp);
+    const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, sp);
+
+    // Get property info
+    const name = await asset.propertyName();
+    const value = await asset.propertyValue();
+
+    // Check each tier for ownership
+    const assets = [];
+    for (const tier of [10, 25, 50, 100]) {
+      try {
+        // Check if user has a token of this tier (scan recent tokens)
+        const balance = await asset.balanceOf(wallet);
+        if (Number(balance) > 0) {
+          // Get the first token
+          const tokenId = await asset.tokenOfOwnerByIndex(wallet, 0);
+          const tokenTier = await asset.tokenTier(tokenId);
+          if (Number(tokenTier) === tier) {
+            // Check verification status on Creditcoin
+            const verified = await asc.isVerified(wallet, tokenId);
+            let receiptValid = false;
+            let receiptId = null;
+            if (verified) {
+              receiptId = (await asc.getReceiptTokenId(wallet, tokenId)).toString();
+              receiptValid = await vrs.isValid(BigInt(receiptId));
+            }
+            assets.push({
+              tokenId: tokenId.toString(),
+              tier,
+              property: name,
+              value: ethers.formatEther(value),
+              tierValue: ethers.formatEther((BigInt(value) * BigInt(tier)) / 100n),
+              verified,
+              receiptId,
+              receiptValid,
+            });
+          }
+        }
+      } catch {}
+    }
+
+    // Also check tokens by scanning
+    try {
+      const balance = await asset.balanceOf(wallet);
+      for (let i = 0; i < Number(balance); i++) {
+        const tokenId = await asset.tokenOfOwnerByIndex(wallet, i);
+        const tier = await asset.tokenTier(tokenId);
+        const existing = assets.find(a => a.tokenId === tokenId.toString());
+        if (!existing) {
+          const verified = await asc.isVerified(wallet, tokenId);
+          let receiptValid = false;
+          let receiptId = null;
+          if (verified) {
+            receiptId = (await asc.getReceiptTokenId(wallet, tokenId)).toString();
+            receiptValid = await vrs.isValid(BigInt(receiptId));
+          }
+          assets.push({
+            tokenId: tokenId.toString(),
+            tier: Number(tier),
+            property: name,
+            value: ethers.formatEther(value),
+            tierValue: ethers.formatEther((BigInt(value) * BigInt(tier)) / 100n),
+            verified,
+            receiptId,
+            receiptValid,
+          });
+        }
+      }
+    } catch {}
+
+    res.json({ assets, propertyName: name, propertyValue: ethers.formatEther(value) });
+  } catch (err: any) {
+    res.json({ assets: [] });
+  }
+});
+
+// ══════════════════════════════════════════════
+//  Borrow against verified ownership
+// ══════════════════════════════════════════════
+app.post("/api/borrow", async (req, res) => {
+  try {
+    const { wallet, assetId, receiptId } = req.body;
+    if (!wallet || !assetId) return res.status(400).json({ error: "wallet and assetId required" });
+
+    const { creditcoinProvider: cp, sepoliaSigner: s } = getProviders();
+    if (!s || !ASC_ADDRESS || !CUSD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
+
+    // 1. Check ownership is verified on Creditcoin
+    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, cp);
+    const verified = await asc.isVerified(wallet, BigInt(assetId));
+    if (!verified) return res.status(400).json({ error: "Ownership not verified on Creditcoin. Verify first." });
+
+    // 2. Check receipt is valid
+    const rid = await asc.getReceiptTokenId(wallet, BigInt(assetId));
+    if (rid === 0n) return res.status(400).json({ error: "No receipt found. Verify first." });
+
+    const VRS_ABI = ["function isValid(uint256) view returns (bool)", "function tokenTier(uint256) view returns (uint256)"];
+    const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, cp);
+    const receiptValid = await vrs.isValid(rid);
+    if (!receiptValid) return res.status(400).json({ error: "Receipt is not valid (stale or superseded)" });
+
+    // 3. Calculate loan amount based on tier
+    const ASSET_ABI_LOCAL = ["function tokenTier(uint256) view returns (uint256)", "function propertyValue() view returns (uint256)"];
+    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI_LOCAL, cp);
+    const tier = await asset.tokenTier(BigInt(assetId));
+    const propertyValue = await asset.propertyValue();
+    // Loan = 50% of tier value (conservative LTV)
+    const loanAmount = (BigInt(propertyValue) * BigInt(tier) * 50n) / (100n * 100n);
+
+    // 4. Mint CUSD to borrower
+    const CUSD_ABI = ["function issueLoan(address,uint256,bytes32) external"];
+    const cusd = new ethers.Contract(CUSD_ADDRESS, CUSD_ABI, s);
+    const tx = await cusd.issueLoan(wallet, loanAmount, ethers.encodeBytes32String(rid.toString()), { gasLimit: 200000 });
+    const receipt = await tx.wait();
+
+    res.json({
+      success: true,
+      loanAmount: ethers.formatEther(loanAmount),
+      tier: Number(tier),
+      collateralValue: ethers.formatEther((BigInt(propertyValue) * BigInt(tier)) / 100n),
+      ltv: "50%",
+      txHash: receipt.hash,
+      blockNumber: receipt.blockNumber,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || String(err) });
   }
 });
 

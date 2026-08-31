@@ -139,6 +139,7 @@ footer a { color: var(--accent); text-decoration: none; }
     <a href="#" class="logo" onclick="showPage('listings')"><span>Attest</span>RWA</a>
     <div class="nav-right">
       <a href="https://docs.attestcoin.org" target="_blank">Protocol</a>
+      <a href="#" onclick="showPage('loan')" style="cursor:pointer">Creditcoin Loan</a>
       <button class="wallet-pill" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
     </div>
   </div>
@@ -266,6 +267,81 @@ footer a { color: var(--accent); text-decoration: none; }
   </div>
 </div>
 
+<!-- ══════ LOAN PAGE ══════ -->
+<div class="page" id="page-loan">
+  <div style="max-width:1280px;margin:0 auto;padding:4rem 3rem 2rem">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.5rem">
+      <div style="width:48px;height:48px;background:var(--accent-light);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🏦</div>
+      <div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;line-height:1.1">Creditcoin Loan</h1>
+        <p style="font-size:0.9rem;color:var(--muted)">Borrow against your verified RWA ownership — no bridges, no custody</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interoperability explainer -->
+  <div style="max-width:1280px;margin:0 auto;padding:0 3rem 2rem">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+      <div style="text-align:center;padding:1rem">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem">🏠</div>
+        <h4 style="font-size:0.85rem;margin-bottom:0.25rem">1. Own on Ethereum</h4>
+        <p style="font-size:0.75rem;color:var(--muted)">Purchase asset shares on Sepolia. Your ownership lives on Ethereum — never leaves.</p>
+      </div>
+      <div style="text-align:center;padding:1rem">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem">🔐</div>
+        <h4 style="font-size:0.85rem;margin-bottom:0.25rem">2. Verify on Creditcoin</h4>
+        <p style="font-size:0.75rem;color:var(--muted)">Attestcoin's attestors prove your ownership cross-chain. A VerifiedShare receipt is minted.</p>
+      </div>
+      <div style="text-align:center;padding:1rem">
+        <div style="font-size:1.5rem;margin-bottom:0.5rem">💰</div>
+        <h4 style="font-size:0.85rem;margin-bottom:0.25rem">3. Borrow CUSD</h4>
+        <p style="font-size:0.75rem;color:var(--muted)">Use your verified receipt as collateral. CUSD stablecoins issued to your wallet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet check -->
+  <div style="max-width:1280px;margin:0 auto;padding:0 3rem 2rem">
+    <div id="loanWalletPrompt" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;text-align:center">
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:0.5rem">Connect Your Wallet</h3>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Connect MetaMask to view your assets and borrow against verified ownership.</p>
+      <button class="buy-btn" onclick="connectWallet()" style="max-width:300px">Connect Wallet</button>
+    </div>
+  </div>
+
+  <!-- Assets list (hidden until connected) -->
+  <div style="max-width:1280px;margin:0 auto;padding:0 3rem 2rem" id="loanAssetsSection" class="hidden">
+    <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:1rem">Your Verified Assets</h3>
+    <div id="loanAssetsList"></div>
+  </div>
+
+  <!-- Borrow panel (hidden until asset selected) -->
+  <div style="max-width:1280px;margin:0 auto;padding:0 3rem 3rem" id="borrowPanelSection" class="hidden">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem">
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:1rem">Borrow Against This Asset</h3>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+        <div class="info-item"><div class="label">Property</div><div class="value" id="bpProperty">—</div></div>
+        <div class="info-item"><div class="label">Share Tier</div><div class="value" id="bpTier">—</div></div>
+        <div class="info-item"><div class="label">Collateral Value</div><div class="value" id="bpValue">—</div></div>
+        <div class="info-item"><div class="label">Loan-to-Value</div><div class="value">50%</div></div>
+        <div class="info-item" style="background:var(--accent-light)"><div class="label">Loan Amount</div><div class="value" style="color:var(--accent)" id="bpLoan">—</div></div>
+        <div class="info-item"><div class="label">Token</div><div class="value">CUSD</div></div>
+      </div>
+
+      <div style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1.5rem">
+        <p style="font-size:0.8rem;color:var(--muted);line-height:1.6">
+          <strong style="color:var(--text)">How this works:</strong> Your verified ownership receipt on Creditcoin acts as collateral. When you borrow, the protocol mints CUSD stablecoins to your wallet — your Ethereum asset never moves. If the receipt is flagged stale (asset sold on Ethereum), the loan position is affected.
+        </p>
+      </div>
+
+      <button class="buy-btn" id="borrowBtn" onclick="borrowAgainstAsset()" style="background:#1a365d">Borrow CUSD</button>
+
+      <div id="borrowResult" style="display:none;margin-top:1rem"></div>
+    </div>
+  </div>
+</div>
+
 <footer>
   <p>Powered by <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Protocol</a> · Ethereum → Creditcoin · No bridge, no custodian<br>Ethereum remains the source of truth for the underlying asset at all times.</p>
 </footer>
@@ -287,6 +363,81 @@ const PROPERTIES = [
 let wallet = null;
 let selectedTier = null;
 let currentProperty = null;
+let selectedBorrowAsset = null;
+
+// ── Loan page functions ──
+async function loadLoanAssets() {
+  if (!wallet) return;
+  document.getElementById("loanWalletPrompt").classList.add("hidden");
+  document.getElementById("loanAssetsSection").classList.remove("hidden");
+  try {
+    const r = await fetch(API + "/my-assets/" + wallet);
+    const d = await r.json();
+    if (!d.assets || d.assets.length === 0) {
+      document.getElementById("loanAssetsList").innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;text-align:center"><p style="color:var(--muted)">No assets found. <a href="#" onclick="showPage('listings')" style="color:var(--accent)">Browse properties</a> to purchase a share first.</p></div>`;
+      return;
+    }
+    document.getElementById("loanAssetsList").innerHTML = d.assets.map(a => `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:0.75rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="selectBorrowAsset(${JSON.stringify(a).replace(/"/g, '&quot;')})">
+        <div><div style="font-weight:600;font-size:0.95rem">${a.property}</div><div style="font-size:0.8rem;color:var(--muted)">${a.tier}% Share · Token #${a.tokenId}</div></div>
+        <div style="text-align:right"><div style="font-weight:600;color:var(--accent)">$${Number(a.tierValue).toLocaleString()}</div><div style="font-size:0.7rem;color:${a.receiptValid ? 'var(--green)' : 'var(--muted)'}">${a.receiptValid ? '✅ Verified' : '⚠️ Not verified'}</div></div>
+      </div>
+    `).join("");
+  } catch(e) {}
+}
+
+function selectBorrowAsset(asset) {
+  selectedBorrowAsset = asset;
+  document.getElementById("borrowPanelSection").classList.remove("hidden");
+  document.getElementById("bpProperty").textContent = asset.property;
+  document.getElementById("bpTier").textContent = asset.tier + "%";
+  document.getElementById("bpValue").textContent = "$" + Number(asset.tierValue).toLocaleString();
+  const loanAmount = (Number(asset.tierValue) * 50) / 100;
+  document.getElementById("bpLoan").textContent = "$" + loanAmount.toLocaleString() + " CUSD";
+  document.getElementById("borrowResult").style.display = "none";
+  if (!asset.receiptValid) {
+    document.getElementById("borrowBtn").textContent = "Verify Ownership First";
+    document.getElementById("borrowBtn").disabled = true;
+  } else {
+    document.getElementById("borrowBtn").textContent = "Borrow $" + loanAmount.toLocaleString() + " CUSD";
+    document.getElementById("borrowBtn").disabled = false;
+  }
+  document.getElementById("borrowPanelSection").scrollIntoView({ behavior: "smooth" });
+}
+
+async function borrowAgainstAsset() {
+  if (!selectedBorrowAsset || !wallet) return;
+  const btn = document.getElementById("borrowBtn");
+  btn.disabled = true;
+  btn.textContent = "Processing...";
+  try {
+    const r = await fetch(API + "/borrow", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ wallet, assetId: selectedBorrowAsset.tokenId, receiptId: selectedBorrowAsset.receiptId })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    document.getElementById("borrowResult").style.display = "block";
+    document.getElementById("borrowResult").innerHTML = `
+      <div style="background:var(--green-bg);border:1px solid #c6f6d5;border-radius:10px;padding:1.25rem">
+        <h4 style="color:var(--green);font-size:0.9rem;margin-bottom:0.75rem">✅ Loan Issued!</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">Loan Amount</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)">${d.loanAmount} CUSD</div></div>
+          <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">Collateral</div><div style="font-size:0.9rem;font-weight:700">${d.collateralValue}</div></div>
+          <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">LTV</div><div style="font-size:0.9rem;font-weight:700">${d.ltv}</div></div>
+          <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase">TX</div><div style="font-size:0.9rem;font-weight:700"><a href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank" style="color:var(--accent)">${d.txHash.slice(0,12)}...</a></div></div>
+        </div>
+      </div>
+    `;
+    btn.textContent = "Borrowed! ✅";
+  } catch(e) {
+    document.getElementById("borrowResult").style.display = "block";
+    document.getElementById("borrowResult").innerHTML = `<div style="color:var(--red);font-size:0.85rem;margin-top:0.75rem">❌ ${e.message}</div>`;
+    btn.disabled = false;
+    btn.textContent = "Retry Borrow";
+  }
+}
 
 // ── Render listings ──
 function renderListings() {
@@ -382,6 +533,10 @@ async function connectWallet() {
   if (selectedTier) {
     document.getElementById("buyBtn").disabled = false;
     document.getElementById("buyBtn").textContent = `Buy ${selectedTier === 100 ? "Full Ownership" : selectedTier + "% Share"}`;
+  }
+  // Load loan assets if on loan page
+  if (document.getElementById("page-loan").classList.contains("active")) {
+    loadLoanAssets();
   }
 }
 
@@ -506,6 +661,12 @@ function showPage(name) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById("page-" + name).classList.add("active");
   window.scrollTo(0, 0);
+  if (name === "loan" && wallet) loadLoanAssets();
+  if (name === "loan" && !wallet) {
+    document.getElementById("loanWalletPrompt").classList.remove("hidden");
+    document.getElementById("loanAssetsSection").classList.add("hidden");
+    document.getElementById("borrowPanelSection").classList.add("hidden");
+  }
 }
 
 renderListings();
