@@ -224,12 +224,12 @@ const API = location.origin + "/api";
 
 // ── Properties data ──
 const PROPERTIES = [
-  { id: 0, name: "The Meridian Tower", loc: "Manhattan, New York", price: "$2.4M", type: "Commercial", gradient: "g1", tag: "Premium", yield: "8.2%", built: "2019", size: "48,000 sqft", desc: "A landmark 32-story commercial tower in the heart of Manhattan. Prime office space with panoramic views of Central Park. Home to Fortune 500 tenants with long-term leases. Strong cash flow with 8.2% annual yield." },
-  { id: 1, name: "Sunset Villa Estates", loc: "Beverly Hills, CA", price: "$1.8M", type: "Residential", gradient: "g2", tag: "Luxury", yield: "6.5%", built: "2021", size: "12,400 sqft", desc: "Exclusive Beverly Hills estate with infinity pool, home theater, and wine cellar. Situated on 1.2 acres with gated privacy. Recent appraisal confirms strong appreciation potential." },
-  { id: 2, name: "Harbor View Lofts", loc: "San Francisco, CA", price: "$950K", type: "Mixed Use", gradient: "g3", tag: "Growth", yield: "7.8%", built: "2018", size: "22,000 sqft", desc: "Waterfront mixed-use development with ground-floor retail and luxury apartments above. High occupancy rates in a supply-constrained market. Excellent transit access." },
-  { id: 3, name: "The Greenwich", loc: "Greenwich, CT", price: "$3.2M", type: "Estate", gradient: "g4", tag: "Heritage", yield: "5.1%", built: "2015", size: "18,600 sqft", desc: "Historic Greenwich estate on 4.5 acres. Manor house with guest cottage, tennis court, and landscaped gardens. A trophy asset with generational wealth potential." },
-  { id: 4, name: "Palm Court Residences", loc: "Miami Beach, FL", price: "$1.1M", type: "Luxury", gradient: "g5", tag: "Coastal", yield: "9.2%", built: "2022", size: "8,200 sqft", desc: "Oceanfront luxury condos with direct beach access. Short-term rental friendly with strong seasonal demand. High-yield investment in Miami's booming market." },
-  { id: 5, name: "Pacific Heights", loc: "San Francisco, CA", price: "$4.5M", type: "Premium", gradient: "g6", tag: "Elite", yield: "4.8%", built: "2020", size: "6,800 sqft", desc: "Trophy residence in San Francisco's most prestigious neighborhood. Golden Gate views, smart home technology, and museum-quality finishes." },
+  { id: 0, name: "The Meridian Tower", loc: "Manhattan, New York", price: "$2.4M", type: "Commercial", tag: "Premium", yield: "8.2%", built: "2019", size: "48,000 sqft", img: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&h=500&fit=crop", desc: "A landmark 32-story commercial tower in the heart of Manhattan. Prime office space with panoramic views of Central Park. Home to Fortune 500 tenants with long-term leases. Strong cash flow with 8.2% annual yield." },
+  { id: 1, name: "Sunset Villa Estates", loc: "Beverly Hills, CA", price: "$1.8M", type: "Residential", tag: "Luxury", yield: "6.5%", built: "2021", size: "12,400 sqft", img: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=500&fit=crop", desc: "Exclusive Beverly Hills estate with infinity pool, home theater, and wine cellar. Situated on 1.2 acres with gated privacy. Recent appraisal confirms strong appreciation potential." },
+  { id: 2, name: "Harbor View Lofts", loc: "San Francisco, CA", price: "$950K", type: "Mixed Use", tag: "Growth", yield: "7.8%", built: "2018", size: "22,000 sqft", img: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=500&fit=crop", desc: "Waterfront mixed-use development with ground-floor retail and luxury apartments above. High occupancy rates in a supply-constrained market. Excellent transit access." },
+  { id: 3, name: "The Greenwich", loc: "Greenwich, CT", price: "$3.2M", type: "Estate", tag: "Heritage", yield: "5.1%", built: "2015", size: "18,600 sqft", img: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=500&fit=crop", desc: "Historic Greenwich estate on 4.5 acres. Manor house with guest cottage, tennis court, and landscaped gardens. A trophy asset with generational wealth potential." },
+  { id: 4, name: "Palm Court Residences", loc: "Miami Beach, FL", price: "$1.1M", type: "Luxury", tag: "Coastal", yield: "9.2%", built: "2022", size: "8,200 sqft", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=500&fit=crop", desc: "Oceanfront luxury condos with direct beach access. Short-term rental friendly with strong seasonal demand. High-yield investment in Miami's booming market." },
+  { id: 5, name: "Pacific Heights", loc: "San Francisco, CA", price: "$4.5M", type: "Premium", tag: "Elite", yield: "4.8%", built: "2020", size: "6,800 sqft", img: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=500&fit=crop", desc: "Trophy residence in San Francisco's most prestigious neighborhood. Golden Gate views, smart home technology, and museum-quality finishes." },
 ];
 
 let wallet = null;
@@ -240,7 +240,7 @@ let currentProperty = null;
 function renderListings() {
   document.getElementById("listingsGrid").innerHTML = PROPERTIES.map(p => `
     <div class="listing-card" onclick="openDetail(${p.id})">
-      <div class="listing-img"><div class="gradient ${p.gradient}"></div><div class="listing-badge">${p.tag}</div></div>
+      <div class="listing-img"><img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover"><div class="listing-badge">${p.tag}</div></div>
       <div class="listing-body">
         <h3>${p.name}</h3>
         <div class="loc">${p.loc}</div>
@@ -256,7 +256,7 @@ function renderListings() {
 // ── Open detail ──
 function openDetail(id) {
   currentProperty = PROPERTIES[id];
-  document.getElementById("detailGradient").className = "gradient " + currentProperty.gradient;
+  document.getElementById("detailHero").innerHTML = `<img src="${currentProperty.img}" alt="${currentProperty.name}" style="width:100%;height:100%;object-fit:cover"><div class="overlay"><h1 id="detailName">${currentProperty.name}</h1><p id="detailLoc">${currentProperty.loc}</p></div>`;
   document.getElementById("detailName").textContent = currentProperty.name;
   document.getElementById("detailLoc").textContent = currentProperty.loc;
   document.getElementById("dLocation").textContent = currentProperty.loc;
