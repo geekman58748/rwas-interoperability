@@ -5,484 +5,398 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AttestRWA — Verified Real World Assets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #fafafa;
+  --bg: #f8f7f4;
   --card: #ffffff;
-  --border: #e5e7eb;
-  --text: #111827;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --green: #059669;
-  --green-bg: #ecfdf5;
-  --amber: #d97706;
-  --amber-bg: #fffbeb;
-  --red: #dc2626;
-  --red-bg: #fef2f2;
-  --radius: 16px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+  --border: #e8e6e1;
+  --text: #1a1a1a;
+  --muted: #8a8580;
+  --accent: #2d5a27;
+  --accent-light: #e8f0e6;
+  --gold: #b8860b;
+  --gold-light: #fdf6e3;
+  --green: #2d5a27;
+  --green-bg: #e8f0e6;
+  --red: #9b2c2c;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
 
 /* ── NAV ── */
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 2rem;
-}
-.nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
-.logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.9rem; }
-.nav-links { display: flex; gap: 2rem; align-items: center; }
-.nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: color 0.15s; }
-.nav-links a:hover { color: var(--text); }
-.wallet-btn {
-  background: var(--text); color: #fff; border: none; padding: 0.5rem 1rem;
-  border-radius: 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
-  font-family: inherit; transition: all 0.15s;
-}
-.wallet-btn:hover { background: #374151; transform: translateY(-1px); }
-.wallet-btn.connected { background: var(--green); }
-.wallet-btn.connected:hover { background: #047857; }
+nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 3rem; }
+.nav-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+.logo span { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 2rem; }
+.nav-right a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; }
+.nav-right a:hover { color: var(--text); }
+.wallet-pill { display: flex; align-items: center; gap: 0.5rem; background: var(--text); color: #fff; padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: none; font-family: inherit; }
+.wallet-pill.connected { background: var(--accent); }
 
-/* ── HERO ── */
-.hero {
-  max-width: 1200px; margin: 0 auto; padding: 4rem 2rem 2rem;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;
-}
-.hero-text h1 { font-size: 2.8rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1rem; }
-.hero-text h1 span { color: var(--accent); }
-.hero-text p { font-size: 1.05rem; color: var(--muted); line-height: 1.6; max-width: 480px; margin-bottom: 1.5rem; }
-.hero-stats { display: flex; gap: 2.5rem; margin-top: 1.5rem; }
-.hero-stat .num { font-size: 1.8rem; font-weight: 700; color: var(--text); }
-.hero-stat .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.1rem; }
-.hero-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 2rem; box-shadow: var(--shadow-lg);
-}
-.hero-card-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--green-bg); color: var(--green); font-size: 0.7rem; font-weight: 600; padding: 0.3rem 0.7rem; border-radius: 20px; margin-bottom: 1rem; }
-.hero-card-badge::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
-.hero-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem; }
-.hero-card .loc { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
-.hero-card-price { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 1rem; }
-.hero-card-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-.hero-card-meta div { text-align: center; }
-.hero-card-meta .val { font-size: 0.9rem; font-weight: 600; }
-.hero-card-meta .lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
+/* ── PAGE: LISTINGS ── */
+.page { display: none; }
+.page.active { display: block; }
 
-/* ── SECTION ── */
-.section { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.section-header h2 { font-size: 1.5rem; font-weight: 700; }
-.section-header .filter { display: flex; gap: 0.5rem; }
-.filter-btn { padding: 0.4rem 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-size: 0.75rem; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--muted); transition: all 0.15s; }
-.filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+.hero-section { max-width: 1280px; margin: 0 auto; padding: 4rem 3rem 2rem; }
+.hero-section h1 { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 0.75rem; }
+.hero-section h1 em { font-style: normal; color: var(--accent); }
+.hero-section p { font-size: 1.05rem; color: var(--muted); max-width: 520px; line-height: 1.6; }
+.stats-row { display: flex; gap: 3rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.stat .num { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; }
+.stat .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.1rem; }
 
-/* ── PROPERTY GRID ── */
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
-.property-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  overflow: hidden; transition: all 0.2s; cursor: pointer;
-}
-.property-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-.property-img {
-  height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative; display: flex; align-items: flex-end; padding: 1rem;
-}
-.property-img.alt1 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.property-img.alt2 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-.property-img.alt3 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-.property-img.alt4 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-.property-tag { position: absolute; top: 0.75rem; left: 0.75rem; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 6px; backdrop-filter: blur(4px); }
-.property-status { position: absolute; top: 0.75rem; right: 0.75rem; }
-.status-pill { display: flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 20px; backdrop-filter: blur(4px); }
-.status-pill.verified { background: rgba(5,150,105,0.9); color: #fff; }
-.status-pill.pending { background: rgba(217,119,6,0.9); color: #fff; }
-.status-pill.unverified { background: rgba(255,255,255,0.9); color: var(--muted); }
-.status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.property-body { padding: 1rem; }
-.property-body h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
-.property-body .loc { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem; }
-.property-footer { display: flex; justify-content: space-between; align-items: center; }
-.property-price { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
-.property-share { font-size: 0.7rem; color: var(--muted); }
+.listings { max-width: 1280px; margin: 0 auto; padding: 2rem 3rem 4rem; }
+.listings h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.listing-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all 0.25s; }
+.listing-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.listing-img { height: 200px; position: relative; }
+.listing-img .gradient { width: 100%; height: 100%; }
+.g1 { background: linear-gradient(135deg, #2d5a27 0%, #4a7c59 100%); }
+.g2 { background: linear-gradient(135deg, #b8860b 0%, #daa520 100%); }
+.g3 { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); }
+.g4 { background: linear-gradient(135deg, #744210 0%, #b8860b 100%); }
+.g5 { background: linear-gradient(135deg, #553c9a 0%, #9f7aea 100%); }
+.g6 { background: linear-gradient(135deg, #1a365d 0%, #4299e1 100%); }
+.listing-badge { position: absolute; top: 1rem; left: 1rem; background: rgba(255,255,255,0.95); color: var(--text); font-size: 0.65rem; font-weight: 600; padding: 0.3rem 0.7rem; border-radius: 100px; backdrop-filter: blur(4px); }
+.listing-body { padding: 1.25rem; }
+.listing-body h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; margin-bottom: 0.25rem; }
+.listing-body .loc { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; }
+.listing-footer { display: flex; justify-content: space-between; align-items: baseline; }
+.listing-price { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+.listing-type { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
-/* ── PROOF PANEL ── */
-.proof-panel {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 1.5rem; margin-top: 2rem;
-}
-.proof-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-.proof-steps { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
-.proof-step {
-  flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 10px;
-  text-align: center; position: relative;
-}
-.proof-step .step-num {
-  width: 24px; height: 24px; border-radius: 50%; background: var(--bg);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.7rem; font-weight: 700; color: var(--muted); margin: 0 auto 0.4rem;
-}
-.proof-step .step-title { font-size: 0.7rem; font-weight: 600; color: var(--text); }
-.proof-step .step-desc { font-size: 0.6rem; color: var(--muted); margin-top: 0.15rem; }
-.proof-step.active { border-color: var(--accent); background: #eff6ff; }
-.proof-step.active .step-num { background: var(--accent); color: #fff; }
-.proof-step.done { border-color: var(--green); background: var(--green-bg); }
-.proof-step.done .step-num { background: var(--green); color: #fff; }
+/* ── PAGE: DETAIL ── */
+.detail-hero { position: relative; height: 360px; overflow: hidden; }
+.detail-hero .gradient { width: 100%; height: 100%; }
+.detail-hero .overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 3rem; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: #fff; }
+.detail-hero .overlay h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 0.25rem; }
+.detail-hero .overlay p { font-size: 0.9rem; opacity: 0.8; }
+
+.detail-content { max-width: 1280px; margin: 0 auto; padding: 2rem 3rem; display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
+
+.info-section { margin-bottom: 2rem; }
+.info-section h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.info-item { padding: 0.75rem; background: var(--bg); border-radius: 8px; }
+.info-item .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.info-item .value { font-size: 0.95rem; font-weight: 600; margin-top: 0.15rem; }
+
+/* ── BUY PANEL ── */
+.buy-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; position: sticky; top: 90px; }
+.buy-panel h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 1rem; }
+.tier-options { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.tier-btn { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; border: 2px solid var(--border); border-radius: 10px; background: var(--card); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.tier-btn:hover { border-color: var(--accent); }
+.tier-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+.tier-btn .tier-pct { font-size: 0.95rem; font-weight: 600; }
+.tier-btn .tier-price { font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+.tier-btn .tier-stock { font-size: 0.7rem; color: var(--muted); }
+.buy-total { display: flex; justify-content: space-between; padding: 0.75rem 0; border-top: 1px solid var(--border); margin-bottom: 1rem; font-weight: 600; }
+.buy-btn { width: 100%; padding: 0.85rem; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.buy-btn:hover { background: #234a1e; }
+.buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.buy-note { font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: 0.75rem; line-height: 1.5; }
+
+.usd-balance { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; background: var(--gold-light); border-radius: 8px; margin-bottom: 1rem; font-size: 0.8rem; }
+.usd-balance .bal { font-weight: 600; color: var(--gold); }
+.usd-balance .faucet-btn { background: none; border: 1px solid var(--gold); color: var(--gold); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: inherit; }
 
 /* ── RESULT ── */
-.result-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
-.result-item {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-  padding: 0.75rem; text-align: center;
-}
-.result-item .r-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
-.result-item .r-value { font-size: 0.95rem; font-weight: 700; margin-top: 0.2rem; }
-.result-item .r-value.yes { color: var(--green); }
-.result-item .r-value.no { color: var(--red); }
-
-/* ── TX LINKS ── */
-.tx-links { display: flex; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-.tx-link { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--accent); text-decoration: none; font-weight: 500; }
+.result-panel { background: var(--green-bg); border: 1px solid #c6f6d5; border-radius: var(--radius); padding: 1.25rem; margin-top: 1rem; }
+.result-panel h4 { color: var(--green); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.result-row { display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.8rem; }
+.result-row .r-label { color: var(--muted); }
+.result-row .r-value { font-weight: 600; }
+.tx-link { color: var(--accent); text-decoration: none; font-weight: 500; }
 .tx-link:hover { text-decoration: underline; }
 
-/* ── ON-CHAIN STATE ── */
-.state-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 1.25rem; margin-top: 1rem;
-}
-.state-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
-.state-row:last-child { border: none; }
-.state-row .s-label { color: var(--muted); }
-.state-row .s-value { font-weight: 600; font-family: 'SF Mono', monospace; font-size: 0.75rem; }
+.hidden { display: none !important; }
 
 /* ── FOOTER ── */
-footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem; border-top: 1px solid var(--border); text-align: center; }
+footer { max-width: 1280px; margin: 2rem auto 0; padding: 2rem 3rem; border-top: 1px solid var(--border); text-align: center; }
 footer p { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
 footer a { color: var(--accent); text-decoration: none; }
 
-/* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  .hero { grid-template-columns: 1fr; gap: 2rem; padding: 2rem 1rem; }
-  .hero-text h1 { font-size: 2rem; }
   .grid { grid-template-columns: 1fr; }
-  .result-grid { grid-template-columns: 1fr 1fr; }
-  .proof-steps { flex-direction: column; }
-  .nav-links { display: none; }
+  .detail-content { grid-template-columns: 1fr; }
+  .hero-section h1 { font-size: 2rem; }
+  nav { padding: 0 1.5rem; }
+  .hero-section, .listings, .detail-content, footer { padding-left: 1.5rem; padding-right: 1.5rem; }
 }
-
-.hidden { display: none !important; }
-.btn-primary {
-  background: var(--accent); color: #fff; border: none; padding: 0.7rem 1.5rem;
-  border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-  font-family: inherit; transition: all 0.15s; width: 100%;
-}
-.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.log-area {
-  background: #f9fafb; border: 1px solid var(--border); border-radius: 8px;
-  padding: 0.75rem; margin-top: 0.75rem; max-height: 100px; overflow-y: auto;
-  font-family: 'SF Mono', monospace; font-size: 0.65rem; color: var(--muted); line-height: 1.5;
-}
-.log-area .ok { color: var(--green); }
-.log-area .er { color: var(--red); }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
   <div class="nav-inner">
-    <a href="#" class="logo">
-      <div class="logo-icon">⬡</div>
-      AttestRWA
-    </a>
-    <div class="nav-links">
-      <a href="#properties">Properties</a>
-      <a href="#proof">Verify</a>
-      <a href="https://docs.attestcoin.org" target="_blank">Docs</a>
-      <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
+    <a href="#" class="logo" onclick="showPage('listings')"><span>Attest</span>RWA</a>
+    <div class="nav-right">
+      <a href="https://docs.attestcoin.org" target="_blank">Protocol</a>
+      <button class="wallet-pill" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
     </div>
   </div>
 </nav>
 
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-text">
-    <h1>Own Real World Assets.<br><span>Proven On-Chain.</span></h1>
-    <p>Fractional ownership of real-world assets, verified through Attestcoin's decentralized oracle protocol. No bridges. No custodians. Pure cryptographic proof.</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="num">6</div><div class="label">Properties</div></div>
-      <div class="hero-stat"><div class="num">24</div><div class="label">Shares Minted</div></div>
-      <div class="hero-stat"><div class="num">100%</div><div class="label">Verified</div></div>
+<!-- ══════ LISTINGS PAGE ══════ -->
+<div class="page active" id="page-listings">
+  <div class="hero-section">
+    <h1>Premium Assets,<br>Verified <em>On-Chain</em></h1>
+    <p>Fractional ownership of real-world properties, cryptographically proven through the Attestcoin Protocol. No bridges. No intermediaries.</p>
+    <div class="stats-row">
+      <div class="stat"><div class="num">6</div><div class="lbl">Properties</div></div>
+      <div class="stat"><div class="num">$14.2M</div><div class="lbl">Total Value</div></div>
+      <div class="stat"><div class="num">100%</div><div class="lbl">Verified</div></div>
     </div>
   </div>
-  <div class="hero-card">
-    <div class="hero-card-badge">Verified on Creditcoin</div>
-    <h3>The Meridian Tower</h3>
-    <div class="loc">Manhattan, New York</div>
-    <div class="hero-card-price">$2.4M total value</div>
-    <div class="hero-card-meta">
-      <div><div class="val">12%</div><div class="lbl">Available</div></div>
-      <div><div class="val">8.2%</div><div class="lbl">Est. Yield</div></div>
-      <div><div class="val">ERC-721</div><div class="lbl">Standard</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- PROPERTIES -->
-<div class="section" id="properties">
-  <div class="section-header">
+  <div class="listings">
     <h2>Available Properties</h2>
-    <div class="filter">
-      <button class="filter-btn active">All</button>
-      <button class="filter-btn">Verified</button>
-      <button class="filter-btn">Pending</button>
-    </div>
-  </div>
-  <div class="grid" id="propertyGrid">
-    <!-- Populated by JS -->
+    <div class="grid" id="listingsGrid"></div>
   </div>
 </div>
 
-<!-- PROOF VERIFICATION -->
-<div class="section" id="proof">
-  <div class="section-header">
-    <h2>Verify Ownership</h2>
-  </div>
-
-  <div class="proof-panel">
-    <h3>🔐 Attestcoin Proof Flow</h3>
-
-    <div class="proof-steps">
-      <div class="proof-step" id="ps1">
-        <div class="step-num">1</div>
-        <div class="step-title">Mint on Ethereum</div>
-        <div class="step-desc">Asset share minted on Sepolia</div>
-      </div>
-      <div class="proof-step" id="ps2">
-        <div class="step-num">2</div>
-        <div class="step-title">Generate Proof</div>
-        <div class="step-desc">Attestcoin SDK + attestors</div>
-      </div>
-      <div class="proof-step" id="ps3">
-        <div class="step-num">3</div>
-        <div class="step-title">Verify on Creditcoin</div>
-        <div class="step-desc">BlockProver precompile</div>
-      </div>
-      <div class="proof-step" id="ps4">
-        <div class="step-num">4</div>
-        <div class="step-title">Receipt Minted</div>
-        <div class="step-desc">VerifiedShare on Creditcoin</div>
-      </div>
-    </div>
-
-    <button class="btn-primary" id="proveBtn" onclick="runProofFlow()">
-      Connect Wallet to Verify
-    </button>
-
-    <div class="log-area hidden" id="proofLog"></div>
-
-    <!-- Result (hidden until done) -->
-    <div class="hidden" id="proofResult">
-      <div class="result-grid">
-        <div class="result-item"><div class="r-label">Owned</div><div class="r-value yes" id="rOwned">—</div></div>
-        <div class="result-item"><div class="r-label">Time Valid</div><div class="r-value yes" id="rTime">—</div></div>
-        <div class="result-item"><div class="r-label">Approved Minter</div><div class="r-value yes" id="rMinter">—</div></div>
-        <div class="result-item"><div class="r-label">Receipt</div><div class="r-value yes" id="rReceipt">—</div></div>
-      </div>
-      <div class="tx-links" id="txLinks"></div>
+<!-- ══════ DETAIL PAGE ══════ -->
+<div class="page" id="page-detail">
+  <div class="detail-hero" id="detailHero">
+    <div class="gradient" id="detailGradient"></div>
+    <div class="overlay">
+      <h1 id="detailName">—</h1>
+      <p id="detailLoc">—</p>
     </div>
   </div>
-
-  <!-- On-chain state -->
-  <div class="state-card hidden" id="stateCard">
-    <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:0.75rem">📊 Live On-Chain State</h3>
-    <div class="state-row"><span class="s-label">Verified (ASC)</span><span class="s-value" id="sVer">—</span></div>
-    <div class="state-row"><span class="s-label">Receipt Valid</span><span class="s-value" id="sValid">—</span></div>
-    <div class="state-row"><span class="s-label">Chain Key</span><span class="s-value" id="sChain">—</span></div>
-    <div class="state-row"><span class="s-label">Block Height</span><span class="s-value" id="sBlock">—</span></div>
-    <div class="state-row"><span class="s-label">Receipt Token ID</span><span class="s-value" id="sRid">—</span></div>
+  <div class="detail-content">
+    <div>
+      <div class="info-section">
+        <h3>Property Details</h3>
+        <div class="info-grid">
+          <div class="info-item"><div class="label">Location</div><div class="value" id="dLocation">—</div></div>
+          <div class="info-item"><div class="label">Type</div><div class="value" id="dType">—</div></div>
+          <div class="info-item"><div class="label">Total Value</div><div class="value" id="dValue">—</div></div>
+          <div class="info-item"><div class="label">Est. Yield</div><div class="value" id="dYield">—</div></div>
+          <div class="info-item"><div class="label">Year Built</div><div class="value" id="dBuilt">—</div></div>
+          <div class="info-item"><div class="label">Size</div><div class="value" id="dSize">—</div></div>
+        </div>
+      </div>
+      <div class="info-section">
+        <h3>Investment Highlights</h3>
+        <p style="font-size:0.9rem;color:var(--muted);line-height:1.7" id="dDescription">—</p>
+      </div>
+      <div class="info-section">
+        <h3>Verification</h3>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.6">
+          Ownership is verified on-chain using the <strong>Attestcoin Protocol</strong>. When you purchase a share, a cryptographic proof confirms your ownership on Ethereum Sepolia, then a <strong>VerifiedShare receipt</strong> is minted on Creditcoin — trustlessly, without bridges or custodians.
+        </p>
+      </div>
+    </div>
+    <div>
+      <div class="buy-panel">
+        <h3>Purchase Share</h3>
+        <div class="usd-balance">
+          <span>Your USD: <span class="bal" id="usdBal">—</span></span>
+          <button class="faucet-btn" onclick="getFaucet()">Get Test USD</button>
+        </div>
+        <div class="tier-options" id="tierOptions"></div>
+        <div class="buy-total">
+          <span>Total</span>
+          <span id="buyTotal">$0</span>
+        </div>
+        <button class="buy-btn" id="buyBtn" onclick="buyShare()" disabled>Select a share</button>
+        <div class="buy-note">Payment in test USD tokens. Ownership proven via Attestcoin Protocol.</div>
+        <div id="buyResult"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- FOOTER -->
 <footer>
-  <p>
-    Powered by <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Protocol</a> ·
-    Ethereum → Creditcoin · No bridge, no custodian, no centralized oracle<br>
-    Ethereum remains the source of truth for the underlying asset at all times.
-  </p>
+  <p>Powered by <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Protocol</a> · Ethereum → Creditcoin · No bridge, no custodian<br>Ethereum remains the source of truth for the underlying asset at all times.</p>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script>
 const API = location.origin + "/api";
 
-// ── Properties ──
+// ── Properties data ──
 const PROPERTIES = [
-  { id: 0, name: "The Meridian Tower", loc: "Manhattan, New York", price: "$2.4M", share: "1% share", gradient: "", tag: "Commercial" },
-  { id: 1, name: "Sunset Villa Estates", loc: "Beverly Hills, CA", price: "$1.8M", share: "2% share", gradient: "alt1", tag: "Residential" },
-  { id: 2, name: "Harbor View Lofts", loc: "San Francisco, CA", price: "$950K", share: "1.5% share", gradient: "alt2", tag: "Mixed Use" },
-  { id: 3, name: "The Greenwich", loc: "Greenwich, CT", price: "$3.2M", share: "0.5% share", gradient: "alt3", tag: "Estate" },
-  { id: 4, name: "Palm Court Residences", loc: "Miami Beach, FL", price: "$1.1M", share: "3% share", gradient: "alt4", tag: "Luxury" },
-  { id: 5, name: "Pacific Heights", loc: "San Francisco, CA", price: "$4.5M", share: "1% share", gradient: "", tag: "Premium" },
+  { id: 0, name: "The Meridian Tower", loc: "Manhattan, New York", price: "$2.4M", type: "Commercial", gradient: "g1", tag: "Premium", yield: "8.2%", built: "2019", size: "48,000 sqft", desc: "A landmark 32-story commercial tower in the heart of Manhattan. Prime office space with panoramic views of Central Park. Home to Fortune 500 tenants with long-term leases. Strong cash flow with 8.2% annual yield." },
+  { id: 1, name: "Sunset Villa Estates", loc: "Beverly Hills, CA", price: "$1.8M", type: "Residential", gradient: "g2", tag: "Luxury", yield: "6.5%", built: "2021", size: "12,400 sqft", desc: "Exclusive Beverly Hills estate with infinity pool, home theater, and wine cellar. Situated on 1.2 acres with gated privacy. Recent appraisal confirms strong appreciation potential." },
+  { id: 2, name: "Harbor View Lofts", loc: "San Francisco, CA", price: "$950K", type: "Mixed Use", gradient: "g3", tag: "Growth", yield: "7.8%", built: "2018", size: "22,000 sqft", desc: "Waterfront mixed-use development with ground-floor retail and luxury apartments above. High occupancy rates in a supply-constrained market. Excellent transit access." },
+  { id: 3, name: "The Greenwich", loc: "Greenwich, CT", price: "$3.2M", type: "Estate", gradient: "g4", tag: "Heritage", yield: "5.1%", built: "2015", size: "18,600 sqft", desc: "Historic Greenwich estate on 4.5 acres. Manor house with guest cottage, tennis court, and landscaped gardens. A trophy asset with generational wealth potential." },
+  { id: 4, name: "Palm Court Residences", loc: "Miami Beach, FL", price: "$1.1M", type: "Luxury", gradient: "g5", tag: "Coastal", yield: "9.2%", built: "2022", size: "8,200 sqft", desc: "Oceanfront luxury condos with direct beach access. Short-term rental friendly with strong seasonal demand. High-yield investment in Miami's booming market." },
+  { id: 5, name: "Pacific Heights", loc: "San Francisco, CA", price: "$4.5M", type: "Premium", gradient: "g6", tag: "Elite", yield: "4.8%", built: "2020", size: "6,800 sqft", desc: "Trophy residence in San Francisco's most prestigious neighborhood. Golden Gate views, smart home technology, and museum-quality finishes." },
 ];
 
-// ── Render properties ──
-function renderProperties() {
-  const grid = document.getElementById("propertyGrid");
-  grid.innerHTML = PROPERTIES.map(p => `
-    <div class="property-card" onclick="selectProperty(${p.id})">
-      <div class="property-img ${p.gradient}">
-        <div class="property-tag">${p.tag}</div>
-        <div class="property-status">
-          <div class="status-pill unverified" id="status-${p.id}">
-            <div class="status-dot"></div> Unverified
-          </div>
-        </div>
-      </div>
-      <div class="property-body">
+let wallet = null;
+let selectedTier = null;
+let currentProperty = null;
+
+// ── Render listings ──
+function renderListings() {
+  document.getElementById("listingsGrid").innerHTML = PROPERTIES.map(p => `
+    <div class="listing-card" onclick="openDetail(${p.id})">
+      <div class="listing-img"><div class="gradient ${p.gradient}"></div><div class="listing-badge">${p.tag}</div></div>
+      <div class="listing-body">
         <h3>${p.name}</h3>
         <div class="loc">${p.loc}</div>
-        <div class="property-footer">
-          <div class="property-price">${p.price}</div>
-          <div class="property-share">${p.share}</div>
+        <div class="listing-footer">
+          <div class="listing-price">${p.price}</div>
+          <div class="listing-type">${p.type}</div>
         </div>
       </div>
     </div>
   `).join("");
 }
 
-let wallet = null;
-let selectedProperty = 0;
+// ── Open detail ──
+function openDetail(id) {
+  currentProperty = PROPERTIES[id];
+  document.getElementById("detailGradient").className = "gradient " + currentProperty.gradient;
+  document.getElementById("detailName").textContent = currentProperty.name;
+  document.getElementById("detailLoc").textContent = currentProperty.loc;
+  document.getElementById("dLocation").textContent = currentProperty.loc;
+  document.getElementById("dType").textContent = currentProperty.type;
+  document.getElementById("dValue").textContent = currentProperty.price;
+  document.getElementById("dYield").textContent = currentProperty.yield;
+  document.getElementById("dBuilt").textContent = currentProperty.built;
+  document.getElementById("dSize").textContent = currentProperty.size;
+  document.getElementById("dDescription").textContent = currentProperty.desc;
 
-function selectProperty(id) {
-  selectedProperty = id;
-  document.querySelectorAll(".property-card").forEach((c,i) => {
-    c.style.borderColor = i === id ? "var(--accent)" : "var(--border)";
-  });
+  selectedTier = null;
+  document.getElementById("buyBtn").disabled = true;
+  document.getElementById("buyBtn").textContent = "Select a share";
+  document.getElementById("buyTotal").textContent = "$0";
+  document.getElementById("buyResult").innerHTML = "";
+
+  // Load tiers from contract
+  loadTiers();
+  updateUsdBalance();
+  showPage("detail");
 }
 
-// ── Connect ──
+async function loadTiers() {
+  try {
+    const r = await fetch(API + "/property");
+    const data = await r.json();
+    if (data.tiers && data.tiers.length > 0) {
+      document.getElementById("tierOptions").innerHTML = data.tiers.map(t => `
+        <button class="tier-btn" onclick="selectTier(${t.tier}, ${t.price})" id="tier-${t.tier}">
+          <div>
+            <div class="tier-pct">${t.tier === 100 ? "Full Ownership" : t.tier + "% Share"}</div>
+            <div class="tier-stock">${t.supply}/${t.max} sold</div>
+          </div>
+          <div class="tier-price">$${Number(t.price).toLocaleString()}</div>
+        </button>
+      `).join("");
+    }
+  } catch(e) {
+    // Fallback tiers
+    const value = 2400000;
+    document.getElementById("tierOptions").innerHTML = [10,25,50,100].map(t => {
+      const price = (value * t) / 100;
+      return `<button class="tier-btn" onclick="selectTier(${t}, ${price})" id="tier-${t}">
+        <div><div class="tier-pct">${t === 100 ? "Full Ownership" : t + "% Share"}</div><div class="tier-stock">Available</div></div>
+        <div class="tier-price">$${price.toLocaleString()}</div>
+      </button>`;
+    }).join("");
+  }
+}
+
+function selectTier(tier, price) {
+  selectedTier = tier;
+  document.querySelectorAll(".tier-btn").forEach(b => b.classList.remove("selected"));
+  document.getElementById("tier-" + tier).classList.add("selected");
+  document.getElementById("buyTotal").textContent = "$" + Number(price).toLocaleString();
+  document.getElementById("buyBtn").disabled = false;
+  document.getElementById("buyBtn").textContent = wallet ? `Buy ${tier === 100 ? "Full Ownership" : tier + "% Share"}` : "Connect Wallet to Buy";
+}
+
+// ── Wallet ──
 async function connectWallet() {
-  if (!window.ethereum) return alert("Please install MetaMask");
+  if (!window.ethereum) return alert("Install MetaMask");
   const provider = new ethers.BrowserProvider(window.ethereum);
   await provider.send("eth_requestAccounts", []);
   const signer = await provider.getSigner();
   wallet = await signer.getAddress();
+  document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+  document.getElementById("walletBtn").classList.add("connected");
+  try { await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:"0xaa36a7"}]}); } catch(e){}
+  updateUsdBalance();
+  if (selectedTier) {
+    document.getElementById("buyBtn").disabled = false;
+    document.getElementById("buyBtn").textContent = `Buy ${selectedTier === 100 ? "Full Ownership" : selectedTier + "% Share"}`;
+  }
+}
 
-  const btn = document.getElementById("walletBtn");
-  btn.textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
-  btn.classList.add("connected");
-
-  // Switch to Sepolia
+async function updateUsdBalance() {
+  if (!wallet) return;
   try {
-    await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:"0xaa36a7"}]});
-  } catch(e){}
-
-  document.getElementById("proveBtn").textContent = "Generate Proof & Verify";
+    const r = await fetch(API + "/usd-balance/" + wallet);
+    const d = await r.json();
+    document.getElementById("usdBal").textContent = "$" + Number(d.balance).toLocaleString();
+  } catch(e) {}
 }
 
-// ── Log helper ──
-function log(msg, cls="") {
-  const el = document.getElementById("proofLog");
-  el.classList.remove("hidden");
-  el.innerHTML += `<div class="${cls}">${msg}</div>`;
-  el.scrollTop = el.scrollHeight;
-}
-
-// ── Proof flow ──
-async function runProofFlow() {
+async function getFaucet() {
   if (!wallet) return connectWallet();
-  const btn = document.getElementById("proveBtn");
+  try {
+    const r = await fetch(API + "/faucet", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({wallet}) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    alert("✅ Received 100,000 test USD!");
+    updateUsdBalance();
+  } catch(e) { alert("Error: " + e.message); }
+}
+
+// ── Buy ──
+async function buyShare() {
+  if (!wallet) return connectWallet();
+  if (!selectedTier) return;
+  const btn = document.getElementById("buyBtn");
   btn.disabled = true;
   btn.textContent = "Processing...";
 
-  // Step 1: Mint
-  document.getElementById("ps1").classList.add("active");
-  log("⏳ Minting asset on Sepolia...");
   try {
-    const r = await fetch(API+"/mint", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({wallet, description:"1% of Building #1"})
+    // 1. Buy share (mint with USD)
+    const buyR = await fetch(API + "/buy", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ wallet, tier: selectedTier })
     });
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
+    const buyD = await buyR.json();
+    if (buyD.error) throw new Error(buyD.error);
 
-    document.getElementById("ps1").classList.remove("active");
-    document.getElementById("ps1").classList.add("done");
-    log(`✅ Minted! TX: <a href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank" style="color:var(--accent)">${d.txHash.slice(0,12)}...</a> Block: ${d.blockNumber}`, "ok");
-
-    // Update property status
-    const pill = document.getElementById("status-"+selectedProperty);
-    pill.className = "status-pill pending";
-    pill.innerHTML = '<div class="status-dot"></div> Proving...';
-
-    // Step 2+3: Prove + Verify
-    document.getElementById("ps2").classList.add("active");
-    log("⏳ Generating proof via Attestcoin SDK...");
-    await new Promise(r => setTimeout(r, 1500));
-
-    document.getElementById("ps2").classList.remove("active");
-    document.getElementById("ps2").classList.add("done");
-    log("✅ Proof generated — verifying via BlockProver precompile...", "ok");
-
-    document.getElementById("ps3").classList.add("active");
-    const proveR = await fetch(API+"/prove-and-mint", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({txHash: d.txHash, wallet, assetId: selectedProperty})
-    });
-    const proveD = await proveR.json();
-    if (proveD.error) throw new Error(proveD.error);
-
-    document.getElementById("ps3").classList.remove("active");
-    document.getElementById("ps3").classList.add("done");
-    document.getElementById("ps4").classList.add("done");
-    log(`✅ Verified + receipt minted! TX: <a href="https://creditcoin-testnet.blockscout.com/tx/${proveD.txHash}" target="_blank" style="color:var(--accent)">${proveD.txHash.slice(0,12)}...</a>`, "ok");
-
-    // Show results
-    document.getElementById("proofResult").classList.remove("hidden");
-    document.getElementById("rOwned").textContent = proveD.after.proof.owned ? "✅ Yes" : "❌ No";
-    document.getElementById("rTime").textContent = proveD.after.proof.mintTimeValid ? "✅ Yes" : "❌ No";
-    document.getElementById("rMinter").textContent = proveD.after.proof.fromApprovedMinter ? "✅ Yes" : "❌ No";
-    document.getElementById("rReceipt").textContent = proveD.receipt?.valid ? "✅ Valid" : "❌ Invalid";
-
-    document.getElementById("txLinks").innerHTML = `
-      <a class="tx-link" href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank">↗ Sepolia TX</a>
-      <a class="tx-link" href="https://creditcoin-testnet.blockscout.com/tx/${proveD.txHash}" target="_blank">↗ Creditcoin TX</a>
+    document.getElementById("buyResult").innerHTML = `
+      <div class="result-panel">
+        <h4>✅ Share Purchased!</h4>
+        <div class="result-row"><span class="r-label">Token ID</span><span class="r-value">#${buyD.tokenId}</span></div>
+        <div class="result-row"><span class="r-label">Tier</span><span class="r-value">${selectedTier}%</span></div>
+        <div class="result-row"><span class="r-label">Price</span><span class="r-value">$${buyD.price}</span></div>
+        <div class="result-row"><span class="r-label">TX</span><span class="r-value"><a class="tx-link" href="https://sepolia.etherscan.io/tx/${buyD.txHash}" target="_blank">${buyD.txHash.slice(0,12)}...</a></span></div>
+      </div>
     `;
 
-    // Show state
-    document.getElementById("stateCard").classList.remove("hidden");
-    document.getElementById("sVer").textContent = proveD.after.verified ? "✅ true" : "❌ false";
-    document.getElementById("sValid").textContent = proveD.receipt?.valid ? "✅ true" : "❌ false";
-    document.getElementById("sChain").textContent = proveD.after.proof.chainKey || "1";
-    document.getElementById("sBlock").textContent = proveD.after.proof.blockHeight || "—";
-    document.getElementById("sRid").textContent = proveD.after.receiptId || "—";
-
-    // Update property card
-    pill.className = "status-pill verified";
-    pill.innerHTML = '<div class="status-dot"></div> Verified';
-
+    updateUsdBalance();
   } catch(e) {
-    log(`❌ Error: ${e.message}`, "er");
+    document.getElementById("buyResult").innerHTML = `<div style="color:var(--red);font-size:0.85rem;margin-top:0.75rem">❌ ${e.message}</div>`;
   }
 
   btn.disabled = false;
-  btn.textContent = "Verify Another";
+  btn.textContent = `Buy ${selectedTier === 100 ? "Full Ownership" : selectedTier + "% Share"}`;
 }
 
-// Init
-renderProperties();
-selectProperty(0);
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+renderListings();
 </script>
 </body>
 </html>

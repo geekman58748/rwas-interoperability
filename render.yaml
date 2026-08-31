@@ -9,7 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: SEPOLIA_RPC_URL
-        sync: false
+        value: https://ethereum-sepolia-rpc.publicnode.com
       - key: CREDITCOIN_RPC_URL
         value: https://rpc.cc3-testnet.creditcoin.network
       - key: CREDITCOIN_PROOF_BUILDER_URL
@@ -17,7 +17,9 @@ services:
       - key: DEPLOYER_PRIVATE_KEY
         sync: false
       - key: SEPOLIA_ASSET_CONTRACT
-        value: 0x2733FD9C5D6fBF7d3519a2e36ec530E52cd536c7
+        value: 0xaDc10fb365d504214Ae54F929C8aC837E84B2fED
+      - key: SEPOLIA_USD_TOKEN
+        value: 0xc2F8871ef47377E84A93dBEE1506AA42826399e3
       - key: CREDITCOIN_ASC_CONTRACT
         value: 0xb67671950f7dF3a950272A6a16F0E350EC9C10af
       - key: CREDITCOIN_RECEIPT_TOKEN
