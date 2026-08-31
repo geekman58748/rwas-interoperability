@@ -3,8 +3,8 @@ services:
     name: attestcoin-rwa
     runtime: node
     plan: free
-    buildCommand: npm install && npx tsc && npx tsc
-    startCommand: node dist/server/index.js
+    buildCommand: npm install
+    startCommand: npx tsx server/index.ts
     envVars:
       - key: NODE_ENV
         value: production
