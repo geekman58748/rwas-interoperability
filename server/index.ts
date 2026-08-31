@@ -374,9 +374,12 @@ app.get("/api/my-assets/:wallet", async (req, res) => {
     const balance = await asset.balanceOf(wallet);
 
     const assets = [];
-    for (let i = 0; i < Number(balance); i++) {
+    // Scan token IDs directly (no ERC721Enumerable)
+    for (let i = 0; i < 20; i++) {
       try {
-        const tokenId = await asset.tokenOfOwnerByIndex(wallet, i);
+        const owner = await asset.ownerOf(i);
+        if (owner.toLowerCase() !== wallet.toLowerCase()) continue;
+        const tokenId = BigInt(i);
         const tier = await asset.tokenTier(tokenId);
         const verified = await asc.isVerified(wallet, tokenId);
         let receiptValid = false;
