@@ -110,7 +110,7 @@ app.post("/api/mint", async (req, res) => {
 
     const { signer: s } = getProviders(); const assetContract = new ethers.Contract(ASSET_ADDRESS, ERC721_ABI, s);
     const desc = description || "1% of Building #1";
-    const tx = await assetContract.mint(wallet, desc);
+    const tx = await assetContract.mint(wallet, desc, { gasLimit: 300000 });
     const receipt = await tx.wait();
 
     // Parse event
