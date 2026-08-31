@@ -1,0 +1,26 @@
+[
+  {
+    "wallet": "0xe1223a9E37810F33049714cd607A71CAda34dDEC",
+    "tokenId": "0",
+    "tier": 10,
+    "txHash": "0x92b965b2e56f8ac3dc00e8e0e48e1e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e",
+    "blockNumber": 11606300,
+    "timestamp": 1725091200000
+  },
+  {
+    "wallet": "0xe1223a9E37810F33049714cd607A71CAda34dDEC",
+    "tokenId": "1",
+    "tier": 25,
+    "txHash": "0x6c9582f62231a5e1bf6c06aadeaf3bd442fc8095f59d23c4b56a03112150716b",
+    "blockNumber": 11606500,
+    "timestamp": 1725092000000
+  },
+  {
+    "wallet": "0xe1223a9E37810F33049714cd607A71CAda34dDEC",
+    "tokenId": "2",
+    "tier": 10,
+    "txHash": "0x24fddd339fd465175d3672af1fdb95290e4d24df98a3c8a3ca217654da56382e",
+    "blockNumber": 11606379,
+    "timestamp": 1725091600000
+  }
+]

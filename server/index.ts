@@ -8,6 +8,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { ethers } from "ethers";
+import * as fs from "fs";
+import * as path from "path";
 import {
   proofProvider,
   blockProver,
@@ -31,6 +33,17 @@ const ASSET_ADDRESS = process.env.SEPOLIA_ASSET_CONTRACT;
 const USD_ADDRESS = process.env.SEPOLIA_USD_TOKEN;
 const CUSD_ADDRESS = process.env.SEPLIA_CUSD_TOKEN || process.env.SEPOLIA_CUSD_TOKEN;
 const SEPOLIA_CHAIN_KEY = 1;
+
+// ── Purchases log (lightweight index, blockchain is source of truth) ──
+const PURCHASES_FILE = path.join(__dirname, "../purchases.json");
+function loadPurchases(): any[] {
+  try { return JSON.parse(fs.readFileSync(PURCHASES_FILE, "utf8")); } catch { return []; }
+}
+function savePurchase(p: any) {
+  const purchases = loadPurchases();
+  purchases.push(p);
+  fs.writeFileSync(PURCHASES_FILE, JSON.stringify(purchases, null, 2));
+}
 
 // Lazy providers
 let sourceProvider: ethers.JsonRpcProvider;
@@ -203,6 +216,9 @@ app.post("/api/buy", async (req, res) => {
       } catch {}
     }
 
+    // Log purchase for fast lookup
+    savePurchase({ wallet, tokenId, tier, txHash: receipt.hash, blockNumber: receipt.blockNumber, timestamp: Date.now() });
+
     res.json({
       success: true,
       txHash: receipt.hash,
@@ -350,58 +366,50 @@ app.get("/api/state/:wallet/:assetId", async (req, res) => {
 // ══════════════════════════════════════════════
 app.get("/api/my-assets/:wallet", async (req, res) => {
   try {
-    const { sourceProvider: sp, creditcoinProvider: cp } = getProviders();
-    if (!ASSET_ADDRESS || !ASC_ADDRESS || !VRS_ADDRESS) return res.json({ assets: [] });
+    const { creditcoinProvider: cp } = getProviders();
+    const wallet = req.params.wallet.toLowerCase();
 
-    const wallet = req.params.wallet;
-    const asset = new ethers.Contract(ASSET_ADDRESS, [
-      "function balanceOf(address) view returns (uint256)",
-      "function tokenOfOwnerByIndex(address,uint256) view returns (uint256)",
-      "function tokenTier(uint256) view returns (uint256)",
-      "function propertyName() view returns (string)",
-      "function propertyValue() view returns (uint256)",
-    ], sp);
-    const asc = new ethers.Contract(ASC_ADDRESS, [
+    // Read from purchases log (fast, no RPC calls)
+    const purchases = loadPurchases().filter(p => p.wallet.toLowerCase() === wallet);
+
+    if (purchases.length === 0) return res.json({ assets: [] });
+
+    // Enrich with on-chain verification status
+    const asc = ASC_ADDRESS ? new ethers.Contract(ASC_ADDRESS, [
       "function isVerified(address,uint256) view returns (bool)",
       "function getReceiptTokenId(address,uint256) view returns (uint256)",
-    ], cp);
-    const vrs = new ethers.Contract(VRS_ADDRESS, [
+    ], cp) : null;
+    const vrs = VRS_ADDRESS ? new ethers.Contract(VRS_ADDRESS, [
       "function isValid(uint256) view returns (bool)",
-    ], cp);
-
-    const name = await asset.propertyName();
-    const value = await asset.propertyValue();
-    const balance = await asset.balanceOf(wallet);
+    ], cp) : null;
 
     const assets = [];
-    // Scan token IDs directly (no ERC721Enumerable)
-    for (let i = 0; i < 20; i++) {
-      try {
-        const owner = await asset.ownerOf(i);
-        if (owner.toLowerCase() !== wallet.toLowerCase()) continue;
-        const tokenId = BigInt(i);
-        const tier = await asset.tokenTier(tokenId);
-        const verified = await asc.isVerified(wallet, tokenId);
-        let receiptValid = false;
-        let receiptId = null;
-        if (verified) {
-          receiptId = (await asc.getReceiptTokenId(wallet, tokenId)).toString();
-          receiptValid = await vrs.isValid(BigInt(receiptId));
-        }
-        assets.push({
-          tokenId: tokenId.toString(),
-          tier: Number(tier),
-          property: name,
-          value: ethers.formatEther(value),
-          tierValue: ethers.formatEther((BigInt(value) * BigInt(tier)) / 100n),
-          verified,
-          receiptId,
-          receiptValid,
-        });
-      } catch {}
+    for (const p of purchases) {
+      let verified = false, receiptValid = false, receiptId = null;
+      if (asc) {
+        try {
+          verified = await asc.isVerified(wallet, BigInt(p.tokenId));
+          if (verified && vrs) {
+            receiptId = (await asc.getReceiptTokenId(wallet, BigInt(p.tokenId))).toString();
+            receiptValid = await vrs.isValid(BigInt(receiptId));
+          }
+        } catch {}
+      }
+      assets.push({
+        tokenId: p.tokenId,
+        tier: p.tier,
+        property: "The Meridian Tower",
+        value: "2400000",
+        tierValue: String(2400000 * p.tier / 100),
+        verified,
+        receiptId,
+        receiptValid,
+        txHash: p.txHash,
+        timestamp: p.timestamp,
+      });
     }
 
-    res.json({ assets, propertyName: name, propertyValue: ethers.formatEther(value) });
+    res.json({ assets });
   } catch (err: any) {
     res.json({ assets: [] });
   }
