@@ -1,0 +1,28 @@
+{
+  "name": "attestcoin-rwa",
+  "version": "1.0.0",
+  "description": "RWA Ownership Proof — Attestcoin Protocol demo",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "dev": "npx tsx watch server/index.ts",
+    "build": "npx tsc",
+    "start": "node dist/server/index.js",
+    "test:proof": "npx tsx scripts/full_proof_flow_v2.ts",
+    "deploy": "npx tsx scripts/deploy_all.ts"
+  },
+  "dependencies": {
+    "@gluwa/usc-sdk": "^0.18.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "ethers": "^6.0.0",
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.0",
+    "@types/express": "^4.17.0",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

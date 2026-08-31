@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RWA Ownership Proof — Attestcoin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .wrap { max-width: 580px; margin: 0 auto; padding: 2rem 1.25rem; }
+        .hdr { text-align: center; margin-bottom: 1.75rem; }
+        .hdr h1 { font-size: 1.35rem; color: #fff; margin-bottom: 0.3rem; }
+        .hdr p { font-size: 0.75rem; color: #555; }
+        .card {
+            background: #141414;
+            border: 1px solid #252525;
+            border-radius: 10px;
+            padding: 1.1rem;
+            margin-bottom: 0.6rem;
+        }
+        .card-hdr { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; flex-shrink: 0; }
+        .dot.on { background: #22c55e; }
+        .dot.wait { background: #f59e0b; }
+        .dot.off { background: #ef4444; }
+        .card-t { font-size: 0.8rem; color: #888; }
+        .card-t b { color: #fff; }
+        .f { margin-bottom: 0.5rem; }
+        .f label { display: block; font-size: 0.6rem; color: #444; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.1rem; }
+        .f .v { font-family: 'SF Mono', monospace; font-size: 0.78rem; color: #aaa; word-break: break-all; }
+        .f .v.g { color: #22c55e; }
+        .f .v.b { color: #60a5fa; }
+        .btn {
+            width: 100%; padding: 0.65rem; border: none; border-radius: 7px;
+            font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+            margin-top: 0.4rem;
+        }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .b1 { background: #3b82f6; color: #fff; }
+        .b1:hover:not(:disabled) { background: #2563eb; }
+        .b2 { background: #1a1a1a; color: #777; border: 1px solid #2a2a2a; }
+        .b2:hover:not(:disabled) { background: #222; color: #aaa; }
+        .b3 { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .b3:hover:not(:disabled) { background: #991b1b; }
+        .link { color: #60a5fa; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        .steps { display: flex; gap: 0.3rem; margin-bottom: 0.75rem; }
+        .stp {
+            flex: 1; text-align: center; padding: 0.35rem 0.15rem;
+            font-size: 0.55rem; border-radius: 5px; background: #0e0e0e; color: #333;
+            border: 1px solid transparent;
+        }
+        .stp.a { background: #0f1d32; color: #60a5fa; border-color: #1e3a5f; }
+        .stp.d { background: #0a1f12; color: #22c55e; border-color: #166534; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.6rem; }
+        .gi {
+            background: #0e0e0e; border: 1px solid #1a1a1a; border-radius: 6px;
+            padding: 0.5rem; text-align: center;
+        }
+        .gi .l { font-size: 0.55rem; color: #444; text-transform: uppercase; }
+        .gi .vl { font-size: 0.8rem; font-weight: 600; margin-top: 0.15rem; }
+        .gi .vl.y { color: #22c55e; }
+        .gi .vl.n { color: #ef4444; }
+        .sep { height: 1px; background: #1a1a1a; margin: 0.6rem 0; }
+        .note { font-size: 0.65rem; color: #333; text-align: center; margin-top: 1.25rem; line-height: 1.5; }
+        .note a { color: #444; }
+        .h { display: none; }
+        .log {
+            background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 6px;
+            padding: 0.5rem; margin-top: 0.5rem; max-height: 120px; overflow-y: auto;
+            font-family: monospace; font-size: 0.65rem; color: #555; line-height: 1.4;
+        }
+        .log .ok { color: #22c55e; }
+        .log .er { color: #ef4444; }
+        .log .inf { color: #60a5fa; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="hdr">
+        <h1>🏠 RWA Ownership Proof</h1>
+        <p>Ethereum → Creditcoin via Attestcoin Protocol</p>
+    </div>
+
+    <div class="steps">
+        <div class="stp" id="s1">1 Mint</div>
+        <div class="stp" id="s2">2 Prove</div>
+        <div class="stp" id="s3">3 Receipt</div>
+        <div class="stp" id="s4">4 Done</div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="card">
+        <div class="card-hdr"><div class="dot" id="wDot"></div><div class="card-t">Wallet</div></div>
+        <div class="f"><label>Address</label><div class="v" id="wAddr">Not connected</div></div>
+        <button class="btn b2" id="wBtn" onclick="connect()">Connect MetaMask</button>
+    </div>
+
+    <!-- MINT -->
+    <div class="card h" id="cMint">
+        <div class="card-hdr"><div class="dot" id="mDot"></div><div class="card-t">1. Mint Asset on Sepolia</div></div>
+        <div class="f"><label>Contract</label><div class="v b" id="mContract">—</div></div>
+        <div class="f"><label>Token ID</label><div class="v" id="mToken">—</div></div>
+        <div class="f"><label>Mint TX</label><div class="v" id="mTx">—</div></div>
+        <button class="btn b1" id="mBtn" onclick="doMint()">Mint "1% of Building #1"</button>
+        <div class="log h" id="mLog"></div>
+    </div>
+
+    <!-- PROVE -->
+    <div class="card h" id="cProof">
+        <div class="card-hdr"><div class="dot" id="pDot"></div><div class="card-t">2. Generate Proof & Verify</div></div>
+        <div class="f"><label>Source Block</label><div class="v" id="pBlock">—</div></div>
+        <div class="f"><label>Proof Status</label><div class="v" id="pStatus">Ready</div></div>
+        <button class="btn b1" id="pBtn" onclick="doProve()">Generate Proof & Mint Receipt</button>
+        <div class="log h" id="pLog"></div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="card h" id="cResult">
+        <div class="card-hdr"><div class="dot on"></div><div class="card-t"><b>Verified on Creditcoin</b></div></div>
+        <div class="grid">
+            <div class="gi"><div class="l">Owned</div><div class="vl y" id="rOwn">—</div></div>
+            <div class="gi"><div class="l">Time Valid</div><div class="vl y" id="rTime">—</div></div>
+            <div class="gi"><div class="l">Approved Minter</div><div class="vl y" id="rMint">—</div></div>
+            <div class="gi"><div class="l">Receipt</div><div class="vl y" id="rRec">—</div></div>
+        </div>
+        <div class="sep"></div>
+        <div class="f"><label>Receipt Token ID</label><div class="v b" id="rId">—</div></div>
+        <div class="f"><label>Receipt Owner</label><div class="v" id="rOwner">—</div></div>
+        <div class="f"><label>Creditcoin TX</label><div class="v"><a class="link" id="rCcTx" href="#" target="_blank">—</a></div></div>
+        <div class="f"><label>Sepolia TX</label><div class="v"><a class="link" id="rSepTx" href="#" target="_blank">—</a></div></div>
+        <div class="f"><label>Gas Used</label><div class="v" id="rGas">—</div></div>
+    </div>
+
+    <!-- STATE -->
+    <div class="card h" id="cState">
+        <div class="card-hdr"><div class="dot on"></div><div class="card-t">On-Chain State (Live)</div></div>
+        <div class="f"><label>Verified (ASC)</label><div class="v g" id="stVer">—</div></div>
+        <div class="f"><label>Receipt Valid (VRS)</label><div class="v g" id="stValid">—</div></div>
+        <div class="f"><label>Chain Key</label><div class="v" id="stChain">—</div></div>
+        <div class="f"><label>Block Height</label><div class="v" id="stBlock">—</div></div>
+        <button class="btn b2" onclick="refreshState()">Refresh State</button>
+    </div>
+
+    <!-- RESYNC -->
+    <div class="card h" id="cResync">
+        <div class="card-hdr"><div class="dot"></div><div class="card-t">🔄 Ethereum → Creditcoin Resync</div></div>
+        <p style="font-size:0.65rem;color:#444;margin-bottom:0.5rem">
+            Fresh proof updates the receipt. Ethereum is always the source of truth.
+        </p>
+        <button class="btn b3" id="rsBtn" onclick="doResync()">Simulate Asset Transfer & Resync</button>
+    </div>
+
+    <div class="note">
+        No bridge. No custodian. No centralized oracle.<br>
+        <a href="https://docs.attestcoin.org">docs.attestcoin.org</a>
+    </div>
+</div>
+
+<script>
+const API = window.location.origin + "/api";
+let wallet = null;
+let mintTxHash = null;
+let mintBlock = null;
+let assetId = 0;
+
+function log(el, msg, cls="") {
+    const d = document.getElementById(el);
+    d.classList.remove("h");
+    d.innerHTML += `<div class="${cls}">${msg}</div>`;
+    d.scrollTop = d.scrollHeight;
+}
+
+function show(id) { document.getElementById(id).classList.remove("h"); }
+function setStep(n, state) {
+    const el = document.getElementById("s"+n);
+    el.className = "stp " + state;
+}
+
+// ── Connect ──
+async function connect() {
+    if (!window.ethereum) return alert("Install MetaMask");
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    const signer = await provider.getSigner();
+    wallet = await signer.getAddress();
+
+    document.getElementById("wAddr").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+    document.getElementById("wDot").classList.add("on");
+    document.getElementById("wBtn").disabled = true;
+    document.getElementById("wBtn").textContent = "Connected ✓";
+
+    // Switch to Sepolia
+    try {
+        await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:"0xaa36a7"}]});
+    } catch(e){}
+
+    // Get config
+    try {
+        const r = await fetch(API+"/config");
+        const cfg = await r.json();
+        document.getElementById("mContract").textContent = cfg.sepoliaAsset.slice(0,10)+"..."+cfg.sepoliaAsset.slice(-6);
+    } catch(e){}
+
+    show("cMint");
+    setStep(1,"a");
+}
+
+// ── Mint ──
+async function doMint() {
+    const btn = document.getElementById("mBtn");
+    btn.disabled = true;
+    btn.textContent = "Minting...";
+    log("mLog","⏳ Calling mint on Sepolia...","inf");
+
+    try {
+        const r = await fetch(API+"/mint", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({wallet, description:"1% of Building #1"})
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+
+        mintTxHash = d.txHash;
+        mintBlock = d.blockNumber;
+        assetId = parseInt(d.tokenId || "0");
+
+        document.getElementById("mToken").textContent = assetId;
+        document.getElementById("mTx").innerHTML = `<a class="link" href="https://sepolia.etherscan.io/tx/${d.txHash}" target="_blank">${d.txHash.slice(0,12)}...${d.txHash.slice(-6)}</a>`;
+
+        log("mLog",`✅ Minted! TX: ${d.txHash.slice(0,12)}...`, "ok");
+        log("mLog",`   Block: ${d.blockNumber} | Gas: ${d.gasUsed}`,"");
+
+        document.getElementById("mDot").classList.add("on");
+        setStep(1,"d");
+        setStep(2,"a");
+
+        show("cProof");
+        document.getElementById("pBlock").textContent = mintBlock;
+        document.getElementById("pStatus").textContent = `Block ${mintBlock} — ready to prove`;
+    } catch(e) {
+        log("mLog",`❌ Error: ${e.message}`,"er");
+        btn.disabled = false;
+        btn.textContent = "Retry Mint";
+    }
+}
+
+// ── Prove ──
+async function doProve() {
+    const btn = document.getElementById("pBtn");
+    btn.disabled = true;
+    btn.textContent = "Proving...";
+    document.getElementById("pDot").classList.add("wait");
+
+    log("pLog",`⏳ Fetching proof for TX: ${mintTxHash.slice(0,12)}...`,"inf");
+
+    try {
+        // Step 1: Generate proof
+        log("pLog","⏳ Generating proof via Attestcoin SDK...","");
+        const proofR = await fetch(API+"/proof/"+mintTxHash);
+        const proofD = await proofR.json();
+        if (proofD.error) throw new Error(proofD.error);
+        log("pLog",`✅ Proof ready (block ${proofD.data.headerNumber}, cached: ${proofD.data.cached})`,"ok");
+
+        // Step 2: Verify + Mint receipt
+        log("pLog","⏳ Verifying via BlockProver precompile + minting receipt...","");
+        const r = await fetch(API+"/prove-and-mint", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({txHash: mintTxHash, wallet, assetId})
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+
+        log("pLog",`✅ Proof verified + receipt minted!`,"ok");
+        log("pLog",`   TX: ${d.txHash.slice(0,12)}... | Gas: ${d.gasUsed}`,"");
+        log("pLog",`   Block: ${d.blockNumber}`,"");
+
+        document.getElementById("pDot").classList.add("on");
+        setStep(2,"d");
+        setStep(3,"d");
+        setStep(4,"d");
+
+        // Show results
+        show("cResult");
+        document.getElementById("rOwn").textContent = d.after.proof.owned ? "✅ true" : "❌";
+        document.getElementById("rTime").textContent = d.after.proof.mintTimeValid ? "✅ true" : "❌";
+        document.getElementById("rMint").textContent = d.after.proof.fromApprovedMinter ? "✅ true" : "❌";
+        document.getElementById("rRec").textContent = d.receipt?.valid ? "✅ valid" : "❌";
+        document.getElementById("rId").textContent = d.after.receiptId;
+        document.getElementById("rOwner").textContent = d.receipt?.owner?.slice(0,10)+"...";
+        document.getElementById("rCcTx").href = "https://creditcoin-testnet.blockscout.com/tx/"+d.txHash;
+        document.getElementById("rCcTx").textContent = d.txHash.slice(0,12)+"...";
+        document.getElementById("rSepTx").href = "https://sepolia.etherscan.io/tx/"+mintTxHash;
+        document.getElementById("rSepTx").textContent = mintTxHash.slice(0,12)+"...";
+        document.getElementById("rGas").textContent = d.gasUsed;
+
+        // Show state + resync
+        show("cState");
+        show("cResync");
+        refreshState();
+
+    } catch(e) {
+        log("pLog",`❌ Error: ${e.message}`,"er");
+        btn.disabled = false;
+        btn.textContent = "Retry Proof";
+    }
+}
+
+// ── Refresh state ──
+async function refreshState() {
+    try {
+        const r = await fetch(API+"/state/"+wallet+"/"+assetId);
+        const d = await r.json();
+        document.getElementById("stVer").textContent = d.verified ? "✅ true" : "❌ false";
+        document.getElementById("stValid").textContent = d.receipt?.valid ? "✅ true" : "❌ false";
+        document.getElementById("stChain").textContent = d.proof?.chainKey || "—";
+        document.getElementById("stBlock").textContent = d.proof?.blockHeight || "—";
+    } catch(e) {}
+}
+
+// ── Resync ──
+async function doResync() {
+    const btn = document.getElementById("rsBtn");
+    btn.disabled = true;
+    btn.textContent = "Resyncing...";
+    // For demo: just show the concept
+    setTimeout(() => {
+        btn.textContent = "✅ Receipt updated via resync";
+        btn.style.background = "#0a1f12";
+        btn.style.color = "#22c55e";
+        btn.style.borderColor = "#166534";
+    }, 2000);
+}
+</script>
+<script src="https://cdn.ethers.io/lib/ethers-6.0.0.umd.min.js"></script>
+</body>
+</html>
