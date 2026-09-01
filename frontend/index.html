@@ -165,6 +165,10 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.88)
 
 .hidden { display: none !important; }
 
+/* ── Scroll Blur ── */
+.scroll-blur { transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1); filter: blur(0px); opacity: 1; }
+.scroll-blur.blurred { filter: blur(3px); opacity: 0.5; }
+
 /* ── How It Works ── */
 .how-section { max-width:1280px; margin:0 auto; padding:4rem 3rem; border-top:1px solid var(--border); }
 .how-inner { margin:0 auto; }
@@ -259,7 +263,7 @@ footer a:hover { text-decoration:underline; }
   </div>
 
   <!-- How It Works -->
-  <div class="how-section">
+  <div class="how-section scroll-blur">
     <div class="how-inner">
       <div class="how-header">
         <span class="how-label">How It Works</span>
@@ -301,7 +305,7 @@ footer a:hover { text-decoration:underline; }
   </div>
 
   <!-- Why Attestcoin -->
-  <div class="why-section">
+  <div class="why-section scroll-blur">
     <div class="why-inner">
       <div class="why-card">
         <div class="why-icon">01</div>
@@ -326,7 +330,7 @@ footer a:hover { text-decoration:underline; }
     </div>
   </div>
 
-  <div class="listings">
+  <div class="listings scroll-blur">
     <h2>Available Properties</h2>
     <div class="grid" id="listingsGrid"></div>
   </div>
@@ -1290,6 +1294,42 @@ document.querySelectorAll('.listing-card').forEach(card => {
 
 renderListings();
 updateStats();
+
+// ── Scroll Blur Effect ──
+// Sections blur when scrolled away, unblur when scrolled into view
+const blurSections = document.querySelectorAll('.scroll-blur');
+const blurObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.remove('blurred');
+    } else {
+      entry.target.classList.add('blurred');
+    }
+  });
+}, {
+  threshold: 0.15,
+  rootMargin: '0px 0px -10% 0px'
+});
+blurSections.forEach(el => blurObserver.observe(el));
+
+// Also blur the hero section text when scrolled past
+const heroSection = document.querySelector('.hero-section');
+if (heroSection) {
+  const heroObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const h1 = heroSection.querySelector('h1');
+      const p = heroSection.querySelector('p');
+      if (!entry.isIntersecting) {
+        if (h1) h1.style.filter = 'blur(4px)';
+        if (p) p.style.opacity = '0.3';
+      } else {
+        if (h1) h1.style.filter = 'none';
+        if (p) p.style.opacity = '1';
+      }
+    });
+  }, { threshold: 0.3 });
+  heroObserver.observe(heroSection);
+}
 </script>
 </body>
 </html>
