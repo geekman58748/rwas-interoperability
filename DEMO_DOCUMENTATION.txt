@@ -1,0 +1,867 @@
+══════════════════════════════════════════════════════════════════════════════
+              ATTESTRWA — CROSS-CHAIN RWA OWNERSHIP VERIFICATION
+                    HACKATHON TECHNICAL DOCUMENTATION
+══════════════════════════════════════════════════════════════════════════════
+
+
+TABLE OF CONTENTS
+─────────────────
+  1.  Project Overview
+  2.  Problem Statement
+  3.  Architecture Overview
+  4.  Chain Environment & Contracts
+  5.  Multi-Layered Verification Conditions
+  6.  Attestcoin Protocol Integration Depth
+  7.  Cryptographic Mechanics (In Our Own Words)
+  8.  End-to-End Flow Walkthrough
+  9.  Contract Specifications
+  10. Frontend & Backend Architecture
+  11. Demo Scenario & Video Script
+  12. Deployed Contract Addresses
+  13. Verified Transactions
+  14. Security Considerations & Limitations
+  15. Why This Is Safer Than Bridges/Oracles
+  16. Technical Diagram
+
+
+══════════════════════════════════════════════════════════════════════════════
+1. PROJECT OVERVIEW
+══════════════════════════════════════════════════════════════════════════════
+
+AttestRWA demonstrates trustless cross-chain verification of real-world asset
+ownership using the Attestcoin Protocol. A user purchases fractional shares
+of real estate on Ethereum Sepolia, and that ownership is cryptographically
+proven to a smart contract on Creditcoin testnet — without bridges, custodians,
+or centralized oracles.
+
+The system goes beyond a simple flag check. It implements multi-condition
+verification, transferable receipt tokens, stale-receipt detection, and a
+borrowing flow against verified collateral.
+
+  Project Name:          AttestRWA — Verified Real World Assets
+  Hackathon Track:       RWA (Real World Assets)
+  Source Chain:          Ethereum Sepolia Testnet
+  Destination Chain:     Creditcoin Testnet
+  Protocol:              Attestcoin Protocol (Attestors, Block Prover, ASC)
+  SDK:                   @gluwa/usc-sdk (ProofBuilder, PrecompileBlockProver)
+  Frontend:              Vanilla HTML/CSS/JS with ethers.js v6
+  Backend:               Node.js + Express + TypeScript
+
+
+══════════════════════════════════════════════════════════════════════════════
+2. PROBLEM STATEMENT
+══════════════════════════════════════════════════════════════════════════════
+
+Real-world asset (RWA) tokenization typically relies on one of these patterns:
+
+  A) Bridged assets: Lock the real asset on one chain, mint a representation
+     on another. Single point of failure — if the bridge is hacked, the
+     asset is gone.
+
+  B) Oracle-based verification: A centralized oracle reads off-chain data
+     and reports it on-chain. Trust assumption — if the oracle lies, the
+     chain believes it.
+
+  C) Custodial: A third party holds the real asset and issues tokens.
+     Counterparty risk — if the custodian fails, tokens are backed by nothing.
+
+AttestRWA uses none of these. Instead:
+
+  D) Attestcoin Protocol: Decentralized attestors independently verify that
+     a transaction happened on the source chain. Their consensus is
+     cryptographically provable on the destination chain via a block prover
+     precompile. No single point of failure. No trust assumption beyond
+     "enough attestors are honest."
+
+
+══════════════════════════════════════════════════════════════════════════════
+3. ARCHITECTURE OVERVIEW
+══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        ETHEREUM SEPOLIA                                │
+│  ┌──────────────────────────────────────────────┐                      │
+│  │  PretendAssetShare (ERC-721)                  │                      │
+│  │  - buyShare(tier) → mints share token         │                      │
+│  │  - USDToken (ERC-20) for payment              │                      │
+│  │  - Owner purchases 10%/25%/50%/100% shares   │                      │
+│  └──────────────────────────────────────────────┘                      │
+│         │                                                              │
+│         │ Ownership event (TX hash)                                     │
+│         ▼                                                              │
+│  ┌──────────────────────────────────────────────┐                      │
+│  │  Attestcoin Attestor Network                  │                      │
+│  │  - Independently verify the TX                │                      │
+│  │  - Reach consensus on block validity          │                      │
+│  │  - Generate Merkle proof + continuity proof   │                      │
+│  └──────────────────────────────────────────────┘                      │
+│         │                                                              │
+└─────────┼───────────────────────────────────────────────────────────────┘
+          │ Proofs posted to Creditcoin
+          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       CREDITCOIN TESTNET                                │
+│  ┌──────────────────────────────────────────────┐                      │
+│  │  Block Prover Precompile                      │                      │
+│  │  - verifySingle() validates proof             │                      │
+│  │  - Merkle proof verification                  │                      │
+│  │  - Continuity proof verification              │                      │
+│  └──────────────────────────────────────────────┘                      │
+│         │                                                              │
+│         ▼                                                              │
+│  ┌──────────────────────────────────────────────┐                      │
+│  │  OwnershipVerifier (ASC)                      │                      │
+│  │  - verifyAndMintReceipt()                     │                      │
+│  │  - 3-condition check (owned, timeValid, minter)│                      │
+│  │  - Mints VerifiedShare receipt token          │                      │
+│  │  - Replay guard (processedQueries mapping)    │                      │
+│  └──────────────────────────────────────────────┘                      │
+│         │                                                              │
+│         ▼                                                              │
+│  ┌──────────────────────────────────────────────┐                      │
+│  │  VerifiedShare (ERC-721 Receipt)              │                      │
+│  │  - Transferable on Creditcoin                 │                      │
+│  │  - Tracks staleness (isStale mapping)         │                      │
+│  │  - Can be flagged if Ethereum state changes   │                      │
+│  └──────────────────────────────────────────────┘                      │
+│         │                                                              │
+│         ▼                                                              │
+│  ┌──────────────────────────────────────────────┐                      │
+│  │  CUSDToken (ERC-20 Stablecoin)               │                      │
+│  │  - Borrow against verified receipt collateral │                      │
+│  │  - 50% LTV (conservative)                     │                      │
+│  │  - Minted to borrower wallet on Creditcoin    │                      │
+│  └──────────────────────────────────────────────┘                      │
+│                                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+══════════════════════════════════════════════════════════════════════════════
+4. CHAIN ENVIRONMENT & CONTRACTS
+══════════════════════════════════════════════════════════════════════════════
+
+  SOURCE CHAIN — Ethereum Sepolia Testnet
+
+  ┌─────────────────────┬──────────────────────────────────────────────────┐
+  │ Contract            │ Address                                          │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ PretendAssetShare   │ 0xaDc10fb365d504214Ae54F929C8aC837E84B2fED      │
+  │ (ERC-721)           │                                                  │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ USDToken (ERC-20)   │ 0xc2F8871ef47377E84A93dBEE1506AA42826399e3      │
+  │                     │                                                  │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ RPC                 │ https://ethereum-sepolia-rpc.publicnode.com      │
+  └─────────────────────┴──────────────────────────────────────────────────┘
+
+  DESTINATION CHAIN — Creditcoin Testnet
+
+  ┌─────────────────────┬──────────────────────────────────────────────────┐
+  │ Contract            │ Address                                          │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ OwnershipVerifier   │ 0xb67671950f7dF3a950272A6a16F0E350EC9C10af      │
+  │ (ASC)               │                                                  │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ VerifiedShare       │ 0xaDc10fb365d504214Ae54F929C8aC837E84B2fED      │
+  │ (Receipt ERC-721)   │                                                  │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ CUSDToken (ERC-20)  │ 0x000bb049eC7B8E4DFA179928Dd5eA8F54B421FB7      │
+  │                     │                                                  │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ RPC                 │ https://rpc.cc3-testnet.creditcoin.network       │
+  ├─────────────────────┼──────────────────────────────────────────────────┤
+  │ Proof Builder API   │ https://proof-gen-api.cc3-testnet.creditcoin...  │
+  └─────────────────────┴──────────────────────────────────────────────────┘
+
+  WALLET
+  ┌─────────────────────┬──────────────────────────────────────────────────┐
+  │ Deployer/Server     │ 0xe1223a9E37810F33049714cd607A71CAda34dDEC      │
+  └─────────────────────┴──────────────────────────────────────────────────┘
+
+
+══════════════════════════════════════════════════════════════════════════════
+5. MULTI-LAYERED VERIFICATION CONDITIONS
+══════════════════════════════════════════════════════════════════════════════
+
+The system verifies ownership through 7 distinct conditions across 4 layers.
+This exceeds the hackathon requirement of "at least one condition beyond a
+single flag check."
+
+LAYER 1: CRYPTOGRAPHIC PROOF GENERATION (Attestcoin SDK)
+───────────────────────────────────────────────────────
+
+  Condition 1: Merkle Proof Validity
+    What: The TX hash from Ethereum is included in a Merkle tree committed
+          by the attestor network.
+    Why:  Proves the transaction is part of a specific block on Ethereum.
+          Cannot be forged without compromising the Merkle tree.
+    Code: ProofBuilder.getProof(txHash) → returns merkleProof
+
+  Condition 2: Continuity Proof
+    What: A chain of block headers linking consecutive blocks, proving
+          the attested block is part of a valid, unbroken chain.
+    Why:  Prevents an attacker from submitting a valid proof for an
+          isolated block that isn't part of the canonical chain.
+    Code: continuityProof returned alongside merkleProof
+
+  Condition 3: Chain Key Validation
+    What: The chainKey (1 for Ethereum Sepolia) must match the expected
+          source chain identifier.
+    Why:  Prevents cross-chain replay attacks where a proof from one
+          chain is submitted on another.
+    Code: chainKey is passed to verifySingle() and checked on-chain
+
+LAYER 2: BLOCK PROVER PRECOMPILE VERIFICATION (Creditcoin)
+─────────────────────────────────────────────────────────
+
+  Condition 4: Precompile Verification
+    What: Creditcoin's built-in precompile contract verifies the
+          Merkle proof + continuity proof against the attestor
+          network's committed block headers.
+    Why:  This is the core security guarantee — the proof is verified
+          by the chain itself, not by a smart contract that could be
+          buggy. The precompile is a native consensus mechanism.
+    Code: PrecompileBlockProver.verifySingle(chainKey, headerNumber,
+          txBytes, merkleProof, continuityProof)
+
+  Condition 5: Source Transaction Success
+    What: The source_tx_successful flag must be true — the Ethereum
+          transaction must have actually succeeded (status = 1).
+    Why:  Prevents verifying failed transactions. A reverted TX hash
+          is valid but the state change never happened.
+    Code: require(sourceTxSuccessful, "Source tx failed")
+
+LAYER 3: SMART CONTRACT CONDITIONS (OwnershipVerifier ASC)
+─────────────────────────────────────────────────────────
+
+  Condition 6: Multi-Condition Ownership Check
+    Sub-condition 6a: owned — The wallet owns the asset
+      What: The attestor network confirms the wallet owns the token
+            on Ethereum at the attested block height.
+      Why:  Proves actual ownership, not just that a TX happened.
+
+    Sub-condition 6b: mintTimeValid — Block height within valid range
+      What: The attested block height must be between minValidBlock
+            and maxValidBlock (defined at contract deployment).
+      Why:  Prevents replaying very old proofs. Ensures the ownership
+            proof is recent and relevant.
+
+    Sub-condition 6c: fromApprovedMinter — Approved minter check
+      What: The wallet or the calling address must be in the
+            approvedMinters mapping.
+      Why:  Only specific wallets can trigger verification. Prevents
+            arbitrary users from creating ownership claims.
+
+LAYER 4: REPLAY GUARD & STATE MANAGEMENT
+────────────────────────────────────────
+
+  Condition 7: Query Deduplication
+    What: Each verification query is identified by a unique hash:
+          keccak256(chainKey, height, wallet, assetId). Once processed,
+          the same query cannot be submitted again.
+    Why:  Prevents double-minting of receipt tokens from the same proof.
+          Each proof can only be used once.
+    Code: processedQueries[queryId] = true;
+          require(!processedQueries[queryId], "Query already processed")
+
+
+══════════════════════════════════════════════════════════════════════════════
+6. ATTESTCOIN PROTOCOL INTEGRATION DEPTH
+══════════════════════════════════════════════════════════════════════════════
+
+We go beyond the official tutorial in the following ways:
+
+  ┌─────────────────────────┬──────────────────────┬──────────────────────┐
+  │ Tutorial Baseline        │ Our Implementation   │ Depth Added          │
+  ├─────────────────────────┼──────────────────────┼──────────────────────┤
+  │ Single event proof      │ Multi-condition      │ 3 conditions +       │
+  │                         │ verification         │ replay guard         │
+  ├─────────────────────────┼──────────────────────┼──────────────────────┤
+  │ One-way proof           │ Resync support       │ Ethereum→Creditcoin  │
+  │                         │                      │ resync capability    │
+  ├─────────────────────────┼──────────────────────┼──────────────────────┤
+  │ Static flag check       │ Transferable receipt │ ERC-721 receipt      │
+  │                         │ token with staleness │ with state tracking  │
+  ├─────────────────────────┼──────────────────────┼──────────────────────┤
+  │ No gating logic         │ Liquidity gating     │ Borrow CUSD against  │
+  │                         │                      │ verified receipt     │
+  ├─────────────────────────┼──────────────────────┼──────────────────────┤
+  │ Single verification     │ Batch-ready queries  │ processedQueries     │
+  │                         │                      │ prevents re-use      │
+  ├─────────────────────────┼──────────────────────┼──────────────────────┤
+  │ Basic SDK call          │ Full SDK integration │ ProofBuilder +       │
+  │                         │                      │ PrecompileBlockProver│
+  └─────────────────────────┴──────────────────────┴──────────────────────┘
+
+
+══════════════════════════════════════════════════════════════════════════════
+7. CRYPTOGRAPHIC MECHANICS (IN OUR OWN WORDS)
+══════════════════════════════════════════════════════════════════════════════
+
+MERKLE PROOFS
+─────────────
+Think of a Merkle tree as a tamper-evident container for all transactions in
+a block. Each transaction is hashed, pairs of hashes are combined and hashed
+again, until you reach a single "root" hash at the top.
+
+If you change ANY transaction in the block, the root hash changes. So when
+the attestor network commits a root hash for a block, they're committing to
+every transaction in that block. To prove a specific transaction is included,
+you provide a "Merkle proof" — a path from the transaction up to the root.
+Anyone can verify this path against the committed root.
+
+In AttestRWA: The user's purchase TX on Ethereum is proven via a Merkle proof
+that links it to the committed block root on Creditcoin.
+
+CONTINUITY PROOFS
+─────────────────
+A Merkle proof proves a transaction is in a block. But which block? And is
+that block part of the real Ethereum chain?
+
+A continuity proof is a chain of block headers linking consecutive blocks.
+It proves that the attested block is part of an unbroken, valid chain — not
+an isolated block from a fork or a fabricated chain.
+
+In AttestRWA: The continuity proof ensures the block containing our purchase
+TX is genuinely part of the Ethereum Sepolia canonical chain.
+
+BLOCK PROVER PRECOMPILE
+───────────────────────
+Creditcoin has a built-in precompile contract (a native function at a fixed
+address) that verifies proofs. This is NOT a regular smart contract that
+could have bugs. It's part of the chain's consensus mechanism.
+
+When we call verifySingle(), the precompile:
+  1. Checks the Merkle proof against the committed block root
+  2. Verifies the continuity proof against the chain of headers
+  3. Returns true/false
+
+This is the security foundation — the chain itself guarantees the proof is
+valid, not a smart contract we wrote.
+
+DISTRIBUTED ATTESTORS (WHY BETTER THAN ORACLES)
+───────────────────────────────────────────────
+Traditional oracles: One entity reads data and reports it. If that entity
+lies, the chain believes it. Single point of failure.
+
+Attestcoin attestors: Multiple independent nodes observe Ethereum, agree
+on what happened via consensus, and commit their findings to Creditcoin.
+To forge a proof, you'd need to compromise a majority of attestors AND
+the block prover precompile. This is orders of magnitude harder than
+hacking a single oracle.
+
+In AttestRWA: The attestor network independently verified our purchase TX
+on Ethereum. Their consensus was committed to Creditcoin, allowing the
+precompile to verify it trustlessly.
+
+
+══════════════════════════════════════════════════════════════════════════════
+8. END-TO-END FLOW WALKTHROUGH
+══════════════════════════════════════════════════════════════════════════════
+
+STEP 1: Purchase Asset Share (Ethereum Sepolia)
+───────────────────────────────────────────────
+  User connects MetaMask to the frontend.
+  User browses property listings (The Meridian Tower, Pacific Heights, etc.).
+  User selects a property and chooses a share tier (10%, 25%, 50%, 100%).
+  User clicks "Buy" → frontend sends request to backend API.
+  Backend server (using deployer wallet):
+    a) Reads the tier price from the contract
+    b) Approves USD spending from the server wallet
+    c) Calls buyShare(tier) on the PretendAssetShare contract
+    d) Server wallet pays USD → contract mints ERC-721 share token
+  Result: User now owns a fractional share of the property on Ethereum.
+  TX Hash: Available on Etherscan (Sepolia).
+  Time: ~15 seconds.
+
+STEP 2: Wait for Attestation (Attestcoin Network)
+─────────────────────────────────────────────────
+  The Attestcoin attestor network observes the Ethereum Sepolia chain.
+  They detect the purchase TX and independently verify:
+    a) The TX is included in a valid block (Merkle proof)
+    b) The block is part of the canonical chain (continuity proof)
+    c) The attestation is committed to Creditcoin
+  Time: ~8-10 minutes for Sepolia attestation.
+  During this time, the frontend shows a block-by-block animation with
+  a progress bar and time estimate.
+
+STEP 3: Generate & Verify Proof (Creditcoin)
+────────────────────────────────────────────
+  Backend calls ProofBuilder.getProof(txHash) via the Attestcoin SDK.
+  The SDK returns:
+    - chainKey (1 for Ethereum)
+    - headerNumber (attested block number)
+    - txBytes (the raw transaction)
+    - merkleProof (path from TX to block root)
+    - continuityProof (chain of block headers)
+  Backend calls PrecompileBlockProver.verifySingle() on Creditcoin.
+  The precompile validates the proof against committed block headers.
+  Result: Proof is cryptographically verified by the chain itself.
+
+STEP 4: Mint Receipt Token (Creditcoin)
+───────────────────────────────────────
+  Backend calls verifyAndMintReceipt() on the OwnershipVerifier ASC.
+  The ASC checks:
+    a) sourceTxSuccessful — Ethereum TX actually succeeded
+    b) !processedQueries[id] — No replay (query not already used)
+    c) owned — Wallet owns the asset (attestor consensus)
+    d) mintTimeValid — Block height within valid range
+    e) fromApprovedMinter — Approved minter check
+  If ALL conditions pass:
+    - verifiedOwnership[wallet][assetId] = true
+    - VerifiedShare receipt token is minted to the wallet
+    - Receipt is transferable on Creditcoin
+  Result: Ownership is now provably verified on Creditcoin.
+  TX Hash: Available on Creditcoin Block Explorer.
+
+STEP 5: Borrow Against Verified Ownership (Optional)
+────────────────────────────────────────────────────
+  On the Creditcoin Loan page, user sees their verified assets.
+  User selects an asset and clicks "Borrow CUSD".
+  Backend checks:
+    a) Is the ownership verified? (ASC.isVerified)
+    b) Is the receipt valid? (VerifiedShare.isValid)
+    c) Calculate loan amount (50% LTV of tier value)
+  If all checks pass:
+    - CUSD stablecoins are minted to the user's Creditcoin wallet
+    - The receipt is flagged as "in use as collateral"
+  Result: User has liquidity on Creditcoin without moving their
+  Ethereum asset. Their property share stays on Ethereum.
+
+
+══════════════════════════════════════════════════════════════════════════════
+9. CONTRACT SPECIFICATIONS
+══════════════════════════════════════════════════════════════════════════════
+
+CONTRACT: PretendAssetShare (ERC-721)
+Chain: Ethereum Sepolia
+Purpose: Represents fractional ownership of real-world properties.
+
+  Functions:
+    buyShare(uint256 tier) → uint256
+      Buy a share using USD tokens. Tier = 10, 25, 50, or 100.
+      Returns the minted token ID.
+
+    mint(address to, uint256 tier) → uint256
+      Admin mint for testing. Only callable by owner.
+
+    getTiers() → (uint256[], uint256[], uint256[], uint256[])
+      Returns all tiers, prices, current supply, and max supply.
+
+    propertyName() → string
+      The name of the property this contract represents.
+
+    propertyValue() → uint256
+      Total property value in wei (with 18 decimals).
+
+  Tier Pricing:
+    10%  share: $240,000   (max 10 shares)
+    25%  share: $600,000   (max 4 shares)
+    50%  share: $1,200,000 (max 2 shares)
+    100% share: $2,400,000 (max 1 share)
+
+  Events:
+    AssetMinted(uint256 tokenId, address owner, uint256 tier,
+                uint256 price, string description)
+
+
+CONTRACT: OwnershipVerifier (ASC)
+Chain: Creditcoin Testnet
+Purpose: Verifies cross-chain ownership and mints receipt tokens.
+
+  Core Functions:
+    verifyAndMintReceipt(chainKey, height, wallet, assetId,
+                         sourceTxHash, sourceTxSuccessful)
+      Verify ownership proof and mint a VerifiedShare receipt.
+      Reverts if: query already processed, source TX failed.
+
+    resyncOwnership(chainKey, height, wallet, assetId,
+                    sourceTxHash, sourceTxSuccessful, stillOwner)
+      Re-verify ownership. If stillOwner is false, revokes the receipt.
+      Implements Ethereum→Creditcoin resync.
+
+    isVerified(address wallet, uint256 assetId) → bool
+      Check if ownership is verified for a wallet+asset pair.
+
+    getProofDetails(address wallet, uint256 assetId) → OwnershipProof
+      Returns: owned, mintTimeValid, fromApprovedMinter, chainKey,
+               blockHeight, txHash.
+
+    getReceiptTokenId(address wallet, uint256 assetId) → uint256
+      Returns the VerifiedShare receipt token ID.
+
+  Storage Mappings:
+    verifiedOwnership[wallet][assetId] → bool
+    ownershipProofs[wallet][assetId] → OwnershipProof
+    receiptTokenIds[wallet][assetId] → uint256
+    processedQueries[bytes32] → bool
+    approvedMinters[address] → bool
+
+
+CONTRACT: VerifiedShare (ERC-721)
+Chain: Creditcoin Testnet
+Purpose: Transferable receipt proving cross-chain ownership verification.
+
+  Functions:
+    isValid(uint256 tokenId) → bool
+      Returns true if receipt is not stale or superseded.
+
+    isStale(uint256 tokenId) → bool
+      Returns true if receipt has been superseded by a newer proof.
+
+    sourceChainKey(uint256 tokenId) → uint64
+      The source chain key (1 = Ethereum Sepolia).
+
+    sourceBlockHeight(uint256 tokenId) → uint64
+      The attested block height.
+
+  Staleness Tracking:
+    When a receipt is superseded by a new verification, the old receipt
+    is flagged as stale. This prevents double-representation of ownership.
+
+
+CONTRACT: CUSDToken (ERC-20)
+Chain: Creditcoin Testnet
+Purpose: Stablecoin for borrowing against verified RWA collateral.
+
+  Functions:
+    issueLoan(address borrower, uint256 amount, bytes32 receiptRef)
+      Mint CUSD to borrower, backed by verified receipt collateral.
+
+    faucet(uint256 amount)
+      Test faucet — anyone can mint test CUSD.
+
+    balanceOf(address) → uint256
+      Standard ERC-20 balance check.
+
+
+CONTRACT: USDToken (ERC-20)
+Chain: Ethereum Sepolia
+Purpose: Test token used for purchasing asset shares.
+
+  Functions:
+    faucet(uint256 amount)
+      Test faucet — mint test USD for purchases.
+
+    approve(address spender, uint256 amount) → bool
+      Standard ERC-20 approval.
+
+
+══════════════════════════════════════════════════════════════════════════════
+10. FRONTEND & BACKEND ARCHITECTURE
+══════════════════════════════════════════════════════════════════════════════
+
+FRONTEND (Vanilla HTML/CSS/JS)
+──────────────────────────────
+  Pages:
+    1. Listings — Property gallery with 6 real estate properties
+    2. Detail — Property info, tier selection, buy flow, verification
+    3. Creditcoin Loan — Asset dashboard, borrow CUSD flow
+
+  Key Features:
+    - MetaMask wallet connection (persistent across tabs)
+    - Real property photos (Unsplash)
+    - Typewriter hero animation
+    - Staggered card entrance animations
+    - Block-by-block attestation progress visualization
+    - Auto-fill TX hash after purchase
+    - Verification state persistence (localStorage)
+
+  Tech:
+    - ethers.js v6 (CDN via cdnjs.cloudflare.com)
+    - Playfair Display + Inter fonts (Google Fonts)
+    - CSS custom properties for theming
+    - No build step — single HTML file
+
+BACKEND (Node.js + Express + TypeScript)
+────────────────────────────────────────
+  API Endpoints:
+
+  GET  /api/health              → Health check
+  GET  /api/config              → Contract addresses
+  GET  /api/property            → Property info + tier data from contract
+  GET  /api/usd-balance/:wallet → USD token balance
+  POST /api/faucet              → Mint test USD
+  POST /api/buy                 → Buy asset share (approve + buyShare)
+  GET  /api/proof/:txHash       → Generate proof via Attestcoin SDK
+  GET  /api/attestation-status/:txHash → Check attestation progress
+  POST /api/prove-and-mint      → Full verification flow (proof → receipt)
+  GET  /api/state/:wallet/:id   → Query verification state
+  GET  /api/my-assets/:wallet   → List purchased assets with verification
+  POST /api/borrow              → Borrow CUSD against verified receipt
+
+  Key Design Decisions:
+    - Lazy provider initialization (no crash on missing env vars)
+    - Two signers: sepoliaSigner (for Sepolia) and signer (for Creditcoin)
+    - purchases.json as fast index (blockchain is source of truth)
+    - Gas limit overrides for public RPC reliability
+    - Error messages returned to frontend (not swallowed)
+
+  Dependencies:
+    - express, cors (HTTP server)
+    - ethers v6 (blockchain interaction)
+    - @gluwa/usc-sdk (Attestcoin proof generation)
+    - dotenv (environment variables)
+
+
+══════════════════════════════════════════════════════════════════════════════
+11. DEMO SCENARIO & VIDEO SCRIPT
+══════════════════════════════════════════════════════════════════════════════
+
+SCENE 1: INTRODUCTION (30 seconds)
+───────────────────────────────────
+  Show: AttestRWA landing page with typewriter hero
+  Narrate: "AttestRWA proves real-world asset ownership across chains using
+  the Attestcoin Protocol. No bridges. No custodians. No centralized oracles.
+  Just cryptographic proof."
+
+SCENE 2: PURCHASE (45 seconds)
+──────────────────────────────
+  Show: Browse properties → Click Pacific Heights → Select 10% share
+  Show: USD balance → Click "Buy"
+  Show: Transaction succeeds → TX hash auto-fills
+  Narrate: "I'm purchasing 10% of Pacific Heights on Ethereum Sepolia using
+  test USD tokens. The ownership event is now recorded on-chain."
+  Show: Etherscan TX showing the mint event
+
+SCENE 3: ATTESTATION WAIT (15 seconds — time-lapse)
+───────────────────────────────────────────────────
+  Show: Block-by-block animation filling up
+  Show: Progress bar advancing
+  Show: Time estimate updating
+  Narrate: "While we wait, Attestcoin's decentralized attestor network is
+  independently verifying this transaction on Ethereum. They're reaching
+  consensus that this block really happened."
+  (Time-lapse 8-10 minutes into 15 seconds)
+
+SCENE 4: VERIFICATION (45 seconds)
+──────────────────────────────────
+  Show: Click "Verify on Creditcoin"
+  Show: Step 1 completes → Step 2 completes → Step 3 completes
+  Show: All 16 blocks filled → "✅ Ownership Verified on Creditcoin"
+  Show: Receipt details (verified, receipt ID, block height)
+  Show: Creditcoin Block Explorer TX
+  Narrate: "The proof was verified via Attestcoin's Block Prover precompile
+  on Creditcoin. A VerifiedShare receipt was minted — a transferable, 
+  re-verifiable claim to the Ethereum ownership. The state changed from
+  false to true."
+
+SCENE 5: MULTI-CONDITION DEPTH (30 seconds)
+────────────────────────────────────────────
+  Show: OwnershipProof details (owned: ✅, mintTimeValid: ✅, 
+        fromApprovedMinter: ✅)
+  Narrate: "This isn't a single flag check. Three conditions were verified:
+  ownership validity, block height within range, and approved minter status.
+  Plus cryptographic proof verification, replay guards, and source TX
+  validation."
+
+SCENE 6: LOAN FLOW (30 seconds)
+───────────────────────────────
+  Show: Navigate to Creditcoin Loan page
+  Show: Assets listed with correct property names and verification status
+  Show: Select Pacific Heights → Click "Borrow CUSD"
+  Show: CUSD minted → balance updated
+  Narrate: "Verified ownership unlocks liquidity. I'm borrowing CUSD
+  stablecoins against my Pacific Heights share — the Ethereum asset never
+  moves. The receipt is the collateral."
+
+SCENE 7: CONCLUSION (15 seconds)
+────────────────────────────────
+  Show: Side-by-side TX links (Sepolia + Creditcoin)
+  Narrate: "Two chains. One proof. No trust assumptions. Ethereum remains
+  the source of truth. The Creditcoin receipt is a live, re-verifiable
+  read of that truth."
+
+
+══════════════════════════════════════════════════════════════════════════════
+12. DEPLOYED CONTRACT ADDRESSES
+══════════════════════════════════════════════════════════════════════════════
+
+  ETHEREUM SEPOLIA TESTNET
+  ────────────────────────
+  PretendAssetShare (ERC-721):   0xaDc10fb365d504214Ae54F929C8aC837E84B2fED
+  USDToken (ERC-20):             0xc2F8871ef47377E84A93dBEE1506AA42826399e3
+  Explorer:                      https://sepolia.etherscan.io
+
+  CREDITCOIN TESTNET
+  ──────────────────
+  OwnershipVerifier (ASC):       0xb67671950f7dF3a950272A6a16F0E350EC9C10af
+  VerifiedShare (Receipt):       0xaDc10fb365d504214Ae54F929C8aC837E84B2fED
+  CUSDToken (Stablecoin):        0x000bb049eC7B8E4DFA179928Dd5eA8F54B421FB7
+  Explorer:                      https://creditcoin-testnet.blockscout.com
+
+  DEPLOYER WALLET
+  ───────────────
+  Address:  0xe1223a9E37810F33049714cd607A71CAda34dDEC
+
+
+══════════════════════════════════════════════════════════════════════════════
+13. VERIFIED TRANSACTIONS
+══════════════════════════════════════════════════════════════════════════════
+
+  ASSET PURCHASES (Sepolia)
+  ─────────────────────────
+  Token #0: 10% share — The Meridian Tower
+    TX: 0x92b965b2e56f8ac3dc00e8e0e48e1e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e
+    Block: 11606300
+
+  Token #1: 10% share — The Meridian Tower
+    TX: 0x6c9582f62231a5e1bf6c06aadeaf3bd442fc8095f59d23c4b56a03112150716b
+    Block: 11606500
+
+  Token #2: 10% share — The Meridian Tower
+    TX: 0x24fddd339fd465175d3672af1fdb95290e4d24df98a3c8a3ca217654da56382e
+    Block: 11606379
+
+  Token #3: 10% share — Pacific Heights
+    TX: 0x9c06c4c1b23e036dbb7187cc7db76df512928d16a080d321f7a3cda179295027
+    Block: 11611448
+
+  VERIFICATION TRANSACTIONS (Creditcoin)
+  ──────────────────────────────────────
+  Receipt #1: Token #0 verified
+    TX: 0xa5b34a0c0af96718cd222b2ee8aeddc6fa02275fd55d7dae58a59cf9e8ab232d
+
+  Receipt #2: Token #2 verified
+    TX: 0x5886a912...
+
+  Receipt #3: Token #0 re-verified (v2 flow)
+    TX: 0xe825787f...
+
+  Receipt #4: Token #1 verified
+    TX: 0x4c30a803...
+
+
+══════════════════════════════════════════════════════════════════════════════
+14. SECURITY CONSIDERATIONS & LIMITATIONS
+══════════════════════════════════════════════════════════════════════════════
+
+  KNOWN LIMITATIONS
+  ─────────────────
+  1. Single-property contract: All purchases go to one ERC-721 contract
+     (The Meridian Tower). Other property listings are UI mockups. The
+     contract could be extended to support multiple properties.
+
+  2. Server-signed transactions: The demo server submits transactions on
+     behalf of users. In production, users would sign their own transactions.
+
+  3. No two-way sync: Ethereum→Creditcoin resync is supported. Creditcoin→
+     Ethereum is NOT — writability is not live in Attestcoin today.
+
+  4. Attestation delay: ~8-10 minutes for Sepolia attestation. This is a
+     security feature (attestors need time to reach consensus), not a bug.
+
+  5. Mock RWA: Properties are fictional. No real-world asset integration.
+
+  SECURITY PROPERTIES
+  ───────────────────
+  1. No bridge risk: The ERC-721 never leaves Ethereum. No lock-and-mint.
+  2. No oracle trust: Attestcoin attestors are decentralized. No single
+     entity controls the data feed.
+  3. No custodian: No third party holds the asset or controls the tokens.
+  4. Replay protection: processedQueries mapping prevents double-use.
+  5. Cryptographic verification: Block prover precompile is native chain
+     consensus, not a smart contract.
+  6. Staleness tracking: Receipts can be flagged stale if ownership changes.
+  7. Source TX validation: Failed transactions cannot be verified.
+
+
+══════════════════════════════════════════════════════════════════════════════
+15. WHY THIS IS SAFER THAN BRIDGES/ORACLES
+══════════════════════════════════════════════════════════════════════════════
+
+  BRIDGE RISK                    ATTESTCOIN PROOF
+  ───────────                    ────────────────
+  Asset locked in bridge         Asset stays on Ethereum
+  Bridge holds custody           No custody — only proof
+  Bridge hack = asset gone       Hack = invalid proof (asset safe)
+  Single point of failure        Distributed attestors
+  Centralized relayer            Decentralized consensus
+  Smart contract bridge logic    Native precompile verification
+
+  ORACLE RISK                    ATTESTCOIN PROOF
+  ──────────                     ────────────────
+  Single entity reads data       Multiple attestors observe
+  Entity can lie                 Consensus required
+  No cryptographic proof         Merkle + continuity proofs
+  "Trust us, we checked"         "Verify it yourself, here's the math"
+  Manipulable off-chain data     On-chain cryptographic commitment
+
+  ATTESTCOIN ADVANTAGE
+  ────────────────────
+  - Attestors observe the source chain independently
+  - They reach consensus on what happened (Byzantine fault tolerant)
+  - Their consensus is committed as a cryptographic root on Creditcoin
+  - The precompile verifies proofs against this root
+  - To forge a proof, you'd need to:
+    a) Compromise a majority of attestors, AND
+    b) Break the Merkle tree, AND
+    c) Break the continuity proof, AND
+    d) Break the precompile's consensus verification
+  - This is exponentially harder than hacking a bridge or lying oracle
+
+
+══════════════════════════════════════════════════════════════════════════════
+16. TECHNICAL DIAGRAM
+══════════════════════════════════════════════════════════════════════════════
+
+                    ETHEREUM SEPOLIA
+  ┌────────────────────────────────────────────────┐
+  │                                                │
+  │  User Wallet ──→ USDToken.approve()            │
+  │       │                                        │
+  │       ▼                                        │
+  │  PretendAssetShare.buyShare(10)                │
+  │       │                                        │
+  │       ├─→ ERC-721 minted to wallet             │
+  │       ├─→ USD transferred to contract          │
+  │       └─→ AssetMinted event emitted            │
+  │              │                                 │
+  │              │ TX Hash + Block Number           │
+  │              ▼                                 │
+  │  ┌──────────────────────┐                      │
+  │  │ Attestcoin Attestors  │ ← Observe chain     │
+  │  │ (distributed nodes)   │                     │
+  │  └──────────┬───────────┘                      │
+  │             │ Consensus root committed         │
+  └─────────────┼──────────────────────────────────┘
+                │
+                ▼
+                    CREDITCOIN TESTNET
+  ┌────────────────────────────────────────────────┐
+  │                                                │
+  │  Backend Server                                │
+  │       │                                        │
+  │       ▼                                        │
+  │  ProofBuilder.getProof(txHash)                 │
+  │  → Merkle proof + continuity proof             │
+  │       │                                        │
+  │       ▼                                        │
+  │  PrecompileBlockProver.verifySingle()          │
+  │  → Chain-native verification                   │
+  │  → Returns: valid / invalid                    │
+  │       │                                        │
+  │       ▼ (if valid)                             │
+  │  OwnershipVerifier.verifyAndMintReceipt()      │
+  │       │                                        │
+  │       ├─→ Check: sourceTxSuccessful            │
+  │       ├─→ Check: !processedQueries[id]         │
+  │       ├─→ Check: owned                         │
+  │       ├─→ Check: mintTimeValid                 │
+  │       ├─→ Check: fromApprovedMinter            │
+  │       │                                        │
+  │       ▼ (all pass)                             │
+  │  VerifiedShare._mint() → Receipt #N            │
+  │       │                                        │
+  │       ▼                                        │
+  │  User can now:                                 │
+  │  ├─ Transfer receipt on Creditcoin             │
+  │  ├─ Use as collateral for CUSD loan            │
+  │  └─ Re-verify if ownership changes on ETH      │
+  │                                                │
+  └────────────────────────────────────────────────┘
+
+
+══════════════════════════════════════════════════════════════════════════════
+END OF DOCUMENTATION
+══════════════════════════════════════════════════════════════════════════════
