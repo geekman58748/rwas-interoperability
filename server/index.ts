@@ -592,7 +592,7 @@ app.post("/api/demo/verify", async (req, res) => {
     // 1. Check attestation
     const pb = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
     const result = await pb.getProof(txHash);
-    if (!result.success) return res.status(500).json({ error: result.error || "Not yet attested" });
+    if (!result.success) return res.json({ attested: false, message: result.error || "Not yet attested" });
     // 2. Verify via precompile
     const bp = new PrecompileBlockProver(cp);
     const isValid = await bp.verifySingle(result.data!.chainKey, result.data!.headerNumber, result.data!.txBytes, result.data!.merkleProof, result.data!.continuityProof);
