@@ -216,8 +216,16 @@ app.post("/api/buy", async (req, res) => {
       } catch {}
     }
 
+    // Get property name from contract for the purchase log
+    let propertyName = "Unknown Property";
+    let propertyValue = "0";
+    try {
+      propertyName = await assetRead.propertyName();
+      propertyValue = ethers.formatEther(await assetRead.propertyValue());
+    } catch {}
+
     // Log purchase for fast lookup
-    savePurchase({ wallet, tokenId, tier, txHash: receipt.hash, blockNumber: receipt.blockNumber, timestamp: Date.now() });
+    savePurchase({ wallet, tokenId, tier, propertyName, propertyValue, txHash: receipt.hash, blockNumber: receipt.blockNumber, timestamp: Date.now() });
 
     res.json({
       success: true,
@@ -226,9 +234,49 @@ app.post("/api/buy", async (req, res) => {
       tokenId,
       tier,
       price: ethers.formatEther(price),
+      propertyName,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || String(err) });
+  }
+});
+
+// ══════════════════════════════════════════════
+//  Check attestation status (for progress tracking)
+// ══════════════════════════════════════════════
+app.get("/api/attestation-status/:txHash", async (req, res) => {
+  try {
+    const { creditcoinProvider: cp } = getProviders();
+    const proofBuilder = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
+
+    // Get current Creditcoin block height
+    const currentBlock = await cp.getBlockNumber();
+
+    // Try to get proof (will fail if not yet attested)
+    const result = await proofBuilder.getProof(req.params.txHash);
+
+    if (result.success && result.data) {
+      const attestedBlock = Number(result.data.headerNumber);
+      // Confidence is based on proof readiness, not block delta (different chains)
+      res.json({
+        attested: true,
+        proofReady: true,
+        attestedBlock,
+        currentBlock,
+        confidence: result.data.cached ? 100 : 95,
+        cached: result.data.cached,
+      });
+    } else {
+      // Not attested yet — estimate based on time since tx
+      res.json({
+        attested: false,
+        proofReady: false,
+        currentBlock,
+        message: result.error || "Block not yet attested",
+      });
+    }
+  } catch (err: any) {
+    res.json({ attested: false, proofReady: false, error: err.message });
   }
 });
 
@@ -366,13 +414,24 @@ app.get("/api/state/:wallet/:assetId", async (req, res) => {
 // ══════════════════════════════════════════════
 app.get("/api/my-assets/:wallet", async (req, res) => {
   try {
-    const { creditcoinProvider: cp } = getProviders();
+    const { sourceProvider: sp, creditcoinProvider: cp } = getProviders();
     const wallet = req.params.wallet.toLowerCase();
 
     // Read from purchases log (fast, no RPC calls)
     const purchases = loadPurchases().filter(p => p.wallet.toLowerCase() === wallet);
 
     if (purchases.length === 0) return res.json({ assets: [] });
+
+    // Get property info from the contract (source of truth for name/value)
+    let contractName = "The Meridian Tower";
+    let contractValue = "2400000";
+    if (ASSET_ADDRESS) {
+      try {
+        const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
+        contractName = await assetRead.propertyName();
+        contractValue = ethers.formatEther(await assetRead.propertyValue());
+      } catch {}
+    }
 
     // Enrich with on-chain verification status
     const asc = ASC_ADDRESS ? new ethers.Contract(ASC_ADDRESS, [
@@ -395,16 +454,23 @@ app.get("/api/my-assets/:wallet", async (req, res) => {
           }
         } catch {}
       }
+
+      // Use property from purchase log if available, otherwise contract's name
+      const propName = p.propertyName || contractName;
+      const propValue = p.propertyValue || contractValue;
+      const numValue = Number(propValue);
+
       assets.push({
         tokenId: p.tokenId,
         tier: p.tier,
-        property: "The Meridian Tower",
-        value: "2400000",
-        tierValue: String(2400000 * p.tier / 100),
+        property: propName,
+        value: String(numValue),
+        tierValue: String(numValue * p.tier / 100),
         verified,
         receiptId,
         receiptValid,
         txHash: p.txHash,
+        blockNumber: p.blockNumber,
         timestamp: p.timestamp,
       });
     }

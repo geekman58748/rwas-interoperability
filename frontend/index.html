@@ -160,6 +160,14 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92)
 
 .hidden { display: none !important; }
 
+/* ── Attestation Block Chain ── */
+.block-item { width:100%;height:28px;border-radius:4px;background:var(--bg);border:1px solid var(--border);transition:all 0.4s ease;position:relative}
+.block-item.confirmed { background:var(--accent-light);border-color:var(--accent);opacity:0.5}
+.block-item.pending { background:#ecfdf5;border-color:#059669;animation:blockPulse 1.2s ease infinite}
+.block-item.attested { background:var(--accent);border-color:var(--accent);opacity:1}
+@keyframes blockPulse { 0%,100%{opacity:1;transform:scaleY(1)} 50%{opacity:0.7;transform:scaleY(1.15)} }
+@keyframes blockConfirm { 0%{background:#ecfdf5;border-color:#059669} 100%{background:var(--accent);border-color:var(--accent)} }
+
 /* ── FOOTER ── */
 footer { max-width: 1280px; margin: 2rem auto 0; padding: 2rem 3rem; border-top: 1px solid var(--border); text-align: center; }
 footer p { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
@@ -295,7 +303,41 @@ footer a { color: var(--accent); text-decoration: none; }
 
       <button class="buy-btn" id="verifyBtn" onclick="verifyOnCreditcoin()" style="background:#1a365d">Verify on Creditcoin</button>
 
-      <div id="verifyLog" style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-top:1rem;max-height:100px;overflow-y:auto;font-family:'SF Mono',monospace;font-size:0.65rem;color:var(--muted);line-height:1.5;display:none"></div>
+      <div id="verifyProgress" style="display:none;margin-top:1rem">
+        <div style="background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:1.25rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <div style="font-weight:600;font-size:0.85rem">Attestation Progress</div>
+            <div id="attestationTime" style="font-size:0.7rem;color:var(--muted)">Estimating...</div>
+          </div>
+          <div style="display:flex;gap:3px;margin-bottom:1rem" id="blockChain">
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item confirmed" title="Confirmed"></div>
+            <div class="block-item pending" title="Pending"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+            <div class="block-item" title="Waiting"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);margin-bottom:0.75rem">
+            <span>Sepolia TX Block</span>
+            <span>Creditcoin Attestation</span>
+          </div>
+          <div style="background:var(--bg);border-radius:100px;height:6px;overflow:hidden;margin-bottom:0.5rem">
+            <div id="attestationBar" style="height:100%;background:linear-gradient(90deg,var(--accent),#4a7c59);width:0%;transition:width 0.5s ease;border-radius:100px"></div>
+          </div>
+          <div id="attestationStatus" style="font-size:0.7rem;color:var(--muted);text-align:center">Waiting for attestors to reach consensus...</div>
+          <div id="verifyLog" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-top:0.75rem;max-height:80px;overflow-y:auto;font-family:'SF Mono',monospace;font-size:0.6rem;color:var(--muted);line-height:1.8;display:block"></div>
+        </div>
+      </div>
 
       <div id="verifyResult" style="display:none;margin-top:1rem">
         <div style="background:var(--green-bg);border:1px solid #c6f6d5;border-radius:10px;padding:1.25rem">
@@ -413,6 +455,9 @@ let wallet = null;
 let selectedTier = null;
 let currentProperty = null;
 let selectedBorrowAsset = null;
+let lastPurchasedTokenId = null;
+let lastPurchasedTxHash = null;
+let attestationPollInterval = null;
 
 // ── Loan page functions ──
 async function loadLoanAssets() {
@@ -637,6 +682,8 @@ async function autoConnect() {
         updateUsdBalance();
       }
     }
+    // Load loan assets if on loan page
+    if (document.getElementById("page-loan").classList.contains("active")) loadLoanAssets();
   } catch(e) {}
 }
 autoConnect();
@@ -648,8 +695,28 @@ window.addEventListener('storage', (e) => {
     document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
     document.getElementById("walletBtn").classList.add("connected");
     updateUsdBalance();
+    if (document.getElementById("page-loan").classList.contains("active")) loadLoanAssets();
   }
 });
+
+// ── Listen for MetaMask account changes ──
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', (accounts) => {
+    if (accounts && accounts.length > 0) {
+      wallet = accounts[0];
+      localStorage.setItem("rwa_wallet", wallet);
+      document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+      document.getElementById("walletBtn").classList.add("connected");
+      updateUsdBalance();
+      if (document.getElementById("page-loan").classList.contains("active")) loadLoanAssets();
+    } else {
+      wallet = null;
+      localStorage.removeItem("rwa_wallet");
+      document.getElementById("walletBtn").textContent = "Connect Wallet";
+      document.getElementById("walletBtn").classList.remove("connected");
+    }
+  });
+}
 
 async function updateUsdBalance() {
   if (!wallet) return;
@@ -701,6 +768,10 @@ async function buyShare() {
 
     updateUsdBalance();
 
+    // Store for verification
+    lastPurchasedTokenId = buyD.tokenId;
+    lastPurchasedTxHash = buyD.txHash;
+
     // Auto-fill verify TX hash
     document.getElementById("verifyTxInput").value = buyD.txHash;
     document.getElementById("verifyTxInput").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -719,37 +790,127 @@ async function verifyOnCreditcoin() {
   const btn = document.getElementById("verifyBtn");
   btn.disabled = true;
   btn.textContent = "Verifying...";
+
+  // Show attestation progress visual
+  const progressDiv = document.getElementById("verifyProgress");
   const log = document.getElementById("verifyLog");
-  log.style.display = "block";
+  progressDiv.style.display = "block";
+  document.getElementById("verifyResult").style.display = "none";
   log.innerHTML = "";
 
   const vLog = (msg, cls="") => { log.innerHTML += `<div class="${cls}">${msg}</div>`; log.scrollTop = log.scrollHeight; };
+  const setStep = (n, state) => {
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById("vStep" + i);
+      if (i < n) el.style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
+      else if (i === n) el.style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
+      else el.style.cssText = "flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)";
+    }
+  };
+
+  // Block chain animation
+  const blocks = document.querySelectorAll(".block-item");
+  const bar = document.getElementById("attestationBar");
+  const statusEl = document.getElementById("attestationStatus");
+  const timeEl = document.getElementById("attestationTime");
+  const startTime = Date.now();
+
+  function updateBlocks(progress) {
+    const filled = Math.floor(progress / (100 / blocks.length));
+    blocks.forEach((b, i) => {
+      b.className = "block-item";
+      if (i < filled) b.classList.add("confirmed");
+      else if (i === filled) b.classList.add("pending");
+    });
+    bar.style.width = progress + "%";
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    timeEl.textContent = `${mins}:${String(secs).padStart(2, "0")} elapsed`;
+  }
+
+  // Start block animation
+  updateBlocks(5);
 
   try {
-    // Step 1
-    document.getElementById("vStep1").style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
-    vLog("⏳ Fetching proof via Attestcoin SDK...");
+    // ── Step 1: Check attestation status ──
+    setStep(1);
+    vLog("⏳ Checking block attestation status...");
+    statusEl.textContent = "Checking if block has been attested by Creditcoin attestors...";
+    updateBlocks(10);
 
-    // Step 2
-    document.getElementById("vStep1").style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
-    document.getElementById("vStep2").style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
-    vLog("✅ Proof ready — verifying via BlockProver precompile...");
+    // Poll for attestation (max 15 min)
+    let attested = false;
+    let pollCount = 0;
+    const maxPolls = 60; // 60 * 15s = 15 min max
+    const startProgress = 10;
+    const endProgress = 65;
 
-    // Step 3
-    document.getElementById("vStep2").style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
-    document.getElementById("vStep3").style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
-    vLog("⏳ Proof verified — minting VerifiedShare receipt on Creditcoin...");
+    while (!attested && pollCount < maxPolls) {
+      try {
+        const statusR = await fetch(API + "/attestation-status/" + txHash);
+        const statusD = await statusR.json();
+        pollCount++;
+        const progress = startProgress + ((endProgress - startProgress) * pollCount / maxPolls);
+        updateBlocks(Math.min(progress, endProgress));
+
+        if (statusD.attested) {
+          attested = true;
+          vLog(`✅ Block ${statusD.attestedBlock} attested on Creditcoin (confident: ${statusD.confidence}%)`, "ok");
+          statusEl.textContent = `Block ${statusD.attestedBlock} attested — confidence ${statusD.confidence}%`;
+          updateBlocks(65);
+        } else {
+          if (pollCount % 4 === 0) {
+            vLog(`⏳ Still waiting... (Creditcoin block ${statusD.currentBlock})`);
+            statusEl.textContent = `Waiting for attestors... (Creditcoin block ${statusD.currentBlock})`;
+          }
+          await new Promise(r => setTimeout(r, 15000));
+        }
+      } catch(e) {
+        pollCount++;
+        await new Promise(r => setTimeout(r, 15000));
+      }
+    }
+
+    if (!attested) {
+      vLog("⚠️ Taking longer than expected. Attempting proof anyway...");
+      statusEl.textContent = "Attempting proof generation...";
+    }
+
+    // ── Step 2: Fetch proof ──
+    setStep(2);
+    vLog("⏳ Generating proof via Attestcoin SDK...");
+    updateBlocks(70);
+
+    // ── Step 3: Submit proof ──
+    setStep(3);
+    vLog("⏳ Verifying via BlockProver precompile...");
+    statusEl.textContent = "Verifying cryptographic proof on Creditcoin...";
+    updateBlocks(80);
 
     const r = await fetch(API + "/prove-and-mint", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ txHash, wallet: wallet || "0xe1223a9E37810F33049714cd607A71CAda34dDEC", assetId: currentProperty?.id || 0 })
+      body: JSON.stringify({ txHash, wallet: wallet || "0xe1223a9E37810F33049714cd607A71CAda34dDEC", assetId: lastPurchasedTokenId || "0" })
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
 
-    document.getElementById("vStep3").style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
+    updateBlocks(95);
+    vLog(`✅ Proof verified — minting receipt...`, "ok");
+    statusEl.textContent = "Minting VerifiedShare receipt on Creditcoin...";
+
+    // Brief pause to show the last block filling
+    await new Promise(r => setTimeout(r, 800));
+    updateBlocks(100);
+    blocks.forEach(b => { b.className = "block-item attested"; });
+
+    setStep(3);
     vLog(`✅ Receipt minted! TX: ${d.txHash.slice(0,16)}...`, "ok");
+    statusEl.textContent = "✅ Ownership verified on Creditcoin!";
+    statusEl.style.color = "var(--accent)";
+    statusEl.style.fontWeight = "600";
+    bar.style.background = "var(--accent)";
 
     // Show result
     document.getElementById("verifyResult").style.display = "block";
@@ -760,8 +921,13 @@ async function verifyOnCreditcoin() {
     document.getElementById("vrSepLink").href = "https://sepolia.etherscan.io/tx/" + txHash;
     document.getElementById("vrCcLink").href = "https://creditcoin-testnet.blockscout.com/tx/" + d.txHash;
 
+    // Stop polling if running
+    if (attestationPollInterval) { clearInterval(attestationPollInterval); attestationPollInterval = null; }
+
   } catch(e) {
     vLog(`❌ Error: ${e.message}`, "er");
+    statusEl.textContent = "❌ Verification failed";
+    statusEl.style.color = "var(--red)";
   }
 
   btn.disabled = false;
