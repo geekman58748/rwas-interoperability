@@ -944,7 +944,7 @@ function selectTier(tier, price) {
   document.getElementById("tier-" + tier).classList.add("selected");
   document.getElementById("buyTotal").textContent = "$" + Number(price).toLocaleString();
   document.getElementById("buyBtn").disabled = false;
-  document.getElementById("buyBtn").textContent = wallet ? `Buy ${tier === 100 ? "Full Ownership" : tier + "% Share"}` : "Connect Wallet to Buy";
+  document.getElementById("buyBtn").textContent = `Buy ${tier === 100 ? "Full Ownership" : tier + "% Share"}`;
 }
 
 // ── Wallet ──
@@ -1058,14 +1058,36 @@ async function getFaucet() {
 
 // ── Buy ──
 async function buyShare() {
-  if (!wallet) return connectWallet();
   if (!selectedTier) return;
   const btn = document.getElementById("buyBtn");
   btn.disabled = true;
   btn.textContent = "Processing...";
 
   try {
-    // 1. Buy share (mint with USD)
+    // If no wallet connected, run full demo server-side
+    if (!wallet) {
+      document.getElementById("buyResult").innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted)"><div style="margin-bottom:0.5rem">Running full demo server-side...</div><div style="font-size:0.75rem">Buy + Attest + Verify + Receipt — no wallet needed</div></div>';
+      const demoR = await fetch(API + "/demo/run", { method: "POST" });
+      const demoD = await demoR.json();
+      if (demoD.error) throw new Error(demoD.error);
+      // Find the buy and verify steps
+      const buyStep = demoD.steps.find(s => s.step === "buy");
+      const verifyStep = demoD.steps.find(s => s.step === "verify");
+      document.getElementById("buyResult").innerHTML = `
+        <div class="result-panel">
+          <h4>\u2705 Full Flow Complete (Server-Side)</h4>
+          <div class="result-row"><span class="r-label">Token ID</span><span class="r-value">#${buyStep?.tokenId || '?'}</span></div>
+          <div class="result-row"><span class="r-label">Tier</span><span class="r-value">${selectedTier}%</span></div>
+          <div class="result-row"><span class="r-label">Purchase TX</span><span class="r-value"><a class="tx-link" href="${buyStep?.etherscan || '#'}" target="_blank">${(buyStep?.txHash || '').slice(0,12)}...</a></span></div>
+          ${verifyStep ? `<div class="result-row"><span class="r-label">Receipt</span><span class="r-value">#${verifyStep.receiptId}</span></div>
+          <div class="result-row"><span class="r-label">Verification TX</span><span class="r-value"><a class="tx-link" href="${verifyStep.blockscout || '#'}" target="_blank">${(verifyStep.txHash || '').slice(0,12)}...</a></span></div>` : ''}
+        </div>
+      `;
+      updateUsdBalance();
+      return;
+    }
+
+    // Wallet connected — use standard buy flow
     const buyR = await fetch(API + "/buy", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
