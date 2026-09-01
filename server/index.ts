@@ -539,6 +539,89 @@ app.post("/api/borrow", async (req, res) => {
 });
 
 // ══════════════════════════════════════════════
+//  One-Click Demo (no wallet needed)
+// ══════════════════════════════════════════════
+app.get("/api/demo/status", (_req, res) => {
+  res.json({
+    status: "ready",
+    message: "Click to run full demo: buy → verify → receipt",
+    deployerWallet: "0xe1223a9E37810F33049714cd607A71CAda34dDEC",
+  });
+});
+
+app.post("/api/demo/run", async (_req, res) => {
+  const steps: any[] = [];
+  try {
+    const { sourceProvider: sp, creditcoinProvider: cp, sepoliaSigner: ss, signer: cs } = getProviders();
+    if (!ss || !cs || !ASSET_ADDRESS || !USD_ADDRESS || !ASC_ADDRESS || !VRS_ADDRESS) {
+      return res.status(500).json({ error: "Server not configured" });
+    }
+    const WALLET = ss.address;
+
+    // ── Step 1: Buy share ──
+    const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
+    const price = await assetRead.tierPrice(10);
+    const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, ss);
+    const approveTx = await usd.approve(ASSET_ADDRESS, price, { gasLimit: 100000 });
+    await approveTx.wait();
+    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, ss);
+    const buyTx = await asset.buyShare(10, { gasLimit: 500000 });
+    const buyReceipt = await buyTx.wait();
+    let tokenId = "0";
+    for (const log of buyReceipt.logs) {
+      try {
+        const parsed = asset.interface.parseLog(log);
+        if (parsed?.name === "AssetMinted") tokenId = parsed.args.tokenId.toString();
+      } catch {}
+    }
+    const propertyName = await assetRead.propertyName();
+    savePurchase({ wallet: WALLET.toLowerCase(), tokenId, tier: 10, propertyName, propertyValue: "2400000", txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, timestamp: Date.now() });
+    steps.push({ step: "buy", status: "done", tokenId, txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, etherscan: `https://sepolia.etherscan.io/tx/${buyReceipt.hash}` });
+
+    // ── Step 2: Wait for attestation ──
+    let attested = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+    while (!attested && attempts < maxAttempts) {
+      attempts++;
+      try {
+        const pb = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
+        const result = await pb.getProof(buyReceipt.hash);
+        if (result.success) { attested = true; }
+        else { await new Promise(r => setTimeout(r, 15000)); }
+      } catch { await new Promise(r => setTimeout(r, 15000)); }
+    }
+    steps.push({ step: "attest", status: attested ? "done" : "timeout", attempts, message: attested ? `Attested after ${attempts} polls` : `Not attested after ${maxAttempts} attempts` });
+
+    // ── Step 3: Verify + mint receipt ──
+    if (attested) {
+      const pb = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
+      const result = await pb.getProof(buyReceipt.hash);
+      if (result.success && result.data) {
+        const bp = new PrecompileBlockProver(cp);
+        const isValid = await bp.verifySingle(result.data.chainKey, result.data.headerNumber, result.data.txBytes, result.data.merkleProof, result.data.continuityProof);
+        steps.push({ step: "precompile", status: isValid ? "done" : "failed", message: isValid ? "Proof verified by BlockProver precompile" : "Proof verification failed" });
+
+        if (isValid) {
+          const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, cs);
+          const beforeVerified = await asc.isVerified(WALLET, BigInt(tokenId));
+          const tx = await asc.verifyAndMintReceipt(result.data.chainKey, result.data.headerNumber, WALLET, BigInt(tokenId), buyReceipt.hash, true);
+          const vReceipt = await tx.wait();
+          const afterVerified = await asc.isVerified(WALLET, BigInt(tokenId));
+          const receiptId = await asc.getReceiptTokenId(WALLET, BigInt(tokenId));
+          steps.push({ step: "verify", status: "done", beforeVerified, afterVerified, receiptId: receiptId.toString(), txHash: vReceipt.hash, blockscout: `https://creditcoin-testnet.blockscout.com/tx/${vReceipt.hash}` });
+        }
+      }
+    }
+
+    res.json({ success: true, wallet: WALLET, steps });
+  } catch (err: any) {
+    steps.push({ step: "error", status: "failed", message: err.message });
+    res.json({ success: false, wallet: ss?.address, steps });
+  }
+});
+
+// ══════════════════════════════════════════════
 //  Static frontend
 // ══════════════════════════════════════════════
 app.use(express.static("frontend"));

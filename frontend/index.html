@@ -254,11 +254,31 @@ footer a:hover { text-decoration:underline; }
       <div class="stat"><div class="num" id="statValue">$0</div><div class="lbl">Total Value</div></div>
       <div class="stat"><div class="num" id="statVerified">0</div><div class="lbl">Verified</div></div>
     </div>
-    <div class="anim-fade-up-d3" style="margin-top:2rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+    <div class="anim-fade-up-d3" style="margin-top:2rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
       <div class="hero-chip">Decentralized Attestors</div>
       <div class="hero-chip">Block Prover Precompile</div>
       <div class="hero-chip">Merkle + Continuity Proofs</div>
       <div class="hero-chip">Cross-Chain Verification</div>
+    </div>
+    <div class="anim-fade-up-d3" style="margin-top:2rem">
+      <button onclick="runDemo()" id="demoBtn" style="background:var(--text);color:#fff;border:none;padding:0.85rem 2rem;border-radius:10px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem">
+        <span id="demoBtnText">Try Live Demo</span>
+        <span id="demoBtnSub" style="font-size:0.7rem;opacity:0.7;font-weight:400">— no wallet needed</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Demo Result (hidden until demo runs) -->
+  <div id="demoResult" style="max-width:1280px;margin:0 auto;padding:0 3rem;display:none">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
+        <div style="width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff">GO</div>
+        <div>
+          <h3 style="font-size:1.2rem;font-weight:600">Live Demo Result</h3>
+          <p style="font-size:0.8rem;color:var(--muted)">Full flow executed on testnet — buy, attest, verify, receipt</p>
+        </div>
+      </div>
+      <div id="demoSteps" style="display:flex;flex-direction:column;gap:0.75rem"></div>
     </div>
   </div>
 
@@ -1329,6 +1349,61 @@ if (heroSection) {
     });
   }, { threshold: 0.3 });
   heroObserver.observe(heroSection);
+}
+
+// ── One-Click Demo ──
+async function runDemo() {
+  const btn = document.getElementById('demoBtn');
+  const btnText = document.getElementById('demoBtnText');
+  const btnSub = document.getElementById('demoBtnSub');
+  const resultDiv = document.getElementById('demoResult');
+  const stepsDiv = document.getElementById('demoSteps');
+  btn.disabled = true;
+  btnText.textContent = 'Running demo...';
+  btnSub.textContent = '';
+  btn.style.opacity = '0.7';
+  resultDiv.style.display = 'block';
+  stepsDiv.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Starting full flow — buy, attest, verify, receipt...</div>';
+  resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const r = await fetch(API + '/demo/run', { method: 'POST' });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    stepsDiv.innerHTML = '';
+    const addStep = (icon, title, detail, link) => {
+      const el = document.createElement('div');
+      el.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:0.75rem;transition:all 0.3s';
+      el.innerHTML = `<div style="width:28px;height:28px;background:${icon === 'done' ? 'var(--accent)' : icon === 'failed' ? 'var(--red)' : 'var(--border)'};border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.65rem;color:#fff;font-weight:600">${icon === 'done' ? '\u2713' : icon === 'failed' ? '\u2717' : '...'}</div><div style="flex:1"><div style="font-weight:600;font-size:0.85rem;margin-bottom:0.25rem">${title}</div><div style="font-size:0.75rem;color:var(--muted);line-height:1.5">${detail}</div>${link ? `<a href="${link}" target="_blank" style="font-size:0.7rem;color:var(--accent);text-decoration:none;margin-top:0.35rem;display:inline-block">View on Explorer</a>` : ''}</div>`;
+      stepsDiv.appendChild(el);
+    };
+
+    for (const step of d.steps) {
+      if (step.step === 'buy') {
+        addStep('done', `Purchased 10% Share (Token #${step.tokenId})`, `Block ${step.blockNumber} on Sepolia`, step.etherscan);
+      } else if (step.step === 'attest') {
+        addStep(step.status === 'done' ? 'done' : 'failed', 'Attestation Complete', step.message);
+      } else if (step.step === 'precompile') {
+        addStep(step.status === 'done' ? 'done' : 'failed', 'BlockProver Verification', step.message);
+      } else if (step.step === 'verify') {
+        addStep('done', `Ownership Verified — Receipt #${step.receiptId}`, `Before: ${step.beforeVerified} → After: ${step.afterVerified}`, step.blockscout);
+      } else if (step.step === 'error') {
+        addStep('failed', 'Error', step.message);
+      }
+    }
+
+    btnText.textContent = 'Demo Complete';
+    btnSub.textContent = '';
+    btn.style.opacity = '1';
+    btn.style.background = 'var(--accent)';
+  } catch(e) {
+    stepsDiv.innerHTML = `<div style="color:var(--red);font-size:0.85rem;padding:1rem">Error: ${e.message}</div>`;
+    btnText.textContent = 'Try Again';
+    btnSub.textContent = '';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
 }
 </script>
 </body>
