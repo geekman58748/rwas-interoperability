@@ -558,12 +558,12 @@ app.post("/api/demo/buy", async (_req, res) => {
     }
     const WALLET = ss.address;
     const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
-    const price = await assetRead.tierPrice(10);
+    const price = await assetRead.tierPrice(25);
     const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, ss);
     const approveTx = await usd.approve(ASSET_ADDRESS, price, { gasLimit: 100000 });
     await approveTx.wait();
     const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, ss);
-    const buyTx = await asset.buyShare(10, { gasLimit: 500000 });
+    const buyTx = await asset.buyShare(25, { gasLimit: 500000 });
     const buyReceipt = await buyTx.wait();
     let tokenId = "0";
     for (const log of buyReceipt.logs) {
@@ -573,7 +573,7 @@ app.post("/api/demo/buy", async (_req, res) => {
       } catch {}
     }
     const propertyName = await assetRead.propertyName();
-    savePurchase({ wallet: WALLET.toLowerCase(), tokenId, tier: 10, propertyName, propertyValue: "2400000", txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, timestamp: Date.now() });
+    savePurchase({ wallet: WALLET.toLowerCase(), tokenId, tier: 25, propertyName, propertyValue: "2400000", txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, timestamp: Date.now() });
     res.json({ success: true, tokenId, txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, etherscan: `https://sepolia.etherscan.io/tx/${buyReceipt.hash}` });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

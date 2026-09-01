@@ -1398,14 +1398,14 @@ async function runDemo() {
   stepsDiv.innerHTML = '';
   resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  var spinEl = demoStep('spinner', 'Purchasing 10% share on Sepolia...', 'Sending transaction to blockchain. This usually takes 15-30 seconds.');
+  var spinEl = demoStep('spinner', 'Purchasing 25% share on Sepolia...', 'Sending transaction to blockchain. This usually takes 15-30 seconds.');
   stepsDiv.appendChild(spinEl);
   try {
     var buyR = await fetch(API + '/demo/buy', { method: 'POST' });
     var buyD = await buyR.json();
     if (buyD.error) throw new Error(buyD.error);
     spinEl.remove();
-    stepsDiv.appendChild(demoStep('done', 'Purchased 10% Share (Token #' + buyD.tokenId + ')', 'Confirmed in block ' + buyD.blockNumber + ' on Sepolia', buyD.etherscan));
+    stepsDiv.appendChild(demoStep('done', 'Purchased 25% Share (Token #' + buyD.tokenId + ')', 'Confirmed in block ' + buyD.blockNumber + ' on Sepolia', buyD.etherscan));
     btnText.textContent = 'Verifying ownership...';
 
     var spinEl2 = demoStep('spinner', 'Waiting for Attestcoin attestors...', 'Attestors are observing Ethereum and reaching consensus. This usually takes ~8-10 minutes.');
