@@ -612,7 +612,7 @@ async function verifyFromLoan(txHash, tokenId) {
           statusEl.textContent = `Block attested — confidence ${statusD.confidence}%`;
           updateBlocks(65);
         } else {
-          if (pollCount % 3 === 0) vLog(`⏳ Waiting for attestors...`);
+          if (pollCount % 4 === 0) vLog(`⏳ Still waiting... (Creditcoin block ${statusD.currentBlock})`);
           await new Promise(r => setTimeout(r, 15000));
         }
       } catch(e) {
