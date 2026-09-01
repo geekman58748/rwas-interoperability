@@ -185,7 +185,7 @@ app.post("/api/faucet", async (req, res) => {
 // ══════════════════════════════════════════════
 app.post("/api/buy", async (req, res) => {
   try {
-    const { wallet, tier } = req.body;
+    const { wallet, tier, propertyName: frontendPropertyName } = req.body;
     if (!wallet || !tier) return res.status(400).json({ error: "wallet and tier required" });
 
     const { sourceProvider: sp, sepoliaSigner: s } = getProviders();
@@ -216,13 +216,16 @@ app.post("/api/buy", async (req, res) => {
       } catch {}
     }
 
-    // Get property name from contract for the purchase log
-    let propertyName = "Unknown Property";
+    // Get property value from contract
     let propertyValue = "0";
     try {
-      propertyName = await assetRead.propertyName();
       propertyValue = ethers.formatEther(await assetRead.propertyValue());
     } catch {}
+
+    // Use frontend-provided property name (what user actually clicked), fallback to contract
+    let contractName = "The Meridian Tower";
+    try { contractName = await assetRead.propertyName(); } catch {}
+    const propertyName = frontendPropertyName || contractName;
 
     // Log purchase for fast lookup
     savePurchase({ wallet, tokenId, tier, propertyName, propertyValue, txHash: receipt.hash, blockNumber: receipt.blockNumber, timestamp: Date.now() });
@@ -237,6 +240,7 @@ app.post("/api/buy", async (req, res) => {
       propertyName,
     });
   } catch (err: any) {
+    console.error("  Buy error:", err.message);
     res.status(500).json({ error: err.message || String(err) });
   }
 });

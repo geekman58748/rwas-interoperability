@@ -33,8 +33,8 @@
     "wallet": "0xe1223a9E37810F33049714cd607A71CAda34dDEC",
     "tokenId": "3",
     "tier": 10,
-    "propertyName": "The Meridian Tower",
-    "propertyValue": "2400000.0",
+    "propertyName": "Pacific Heights",
+    "propertyValue": "2400000",
     "txHash": "0x9c06c4c1b23e036dbb7187cc7db76df512928d16a080d321f7a3cda179295027",
     "blockNumber": 11611448,
     "timestamp": 1788250611219

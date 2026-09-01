@@ -431,6 +431,38 @@ footer a { color: var(--accent); text-decoration: none; }
       <div id="borrowResult" style="display:none;margin-top:1rem"></div>
     </div>
   </div>
+
+  <!-- Loan page verification overlay (same block animation as detail page) -->
+  <div style="max-width:1280px;margin:0 auto;padding:0 3rem 3rem" id="loanVerifySection" class="hidden">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem">
+        <div style="width:40px;height:40px;background:var(--accent-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🔐</div>
+        <div>
+          <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem">Verify Ownership</h3>
+          <p style="font-size:0.8rem;color:var(--muted)" id="loanVerifyProperty">—</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+        <div id="lvStep1" style="flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)">1. Attestation</div>
+        <div id="lvStep2" style="flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)">2. Proof</div>
+        <div id="lvStep3" style="flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)">3. Receipt</div>
+      </div>
+      <div id="loanVerifyProgress" style="background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:1.25rem;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div style="font-weight:600;font-size:0.85rem">Attestation Progress</div>
+          <div id="lvTime" style="font-size:0.7rem;color:var(--muted)">Estimating...</div>
+        </div>
+        <div style="display:flex;gap:3px;margin-bottom:1rem" id="lvBlocks"></div>
+        <div style="background:var(--bg);border-radius:100px;height:6px;overflow:hidden;margin-bottom:0.5rem">
+          <div id="lvBar" style="height:100%;background:linear-gradient(90deg,var(--accent),#4a7c59);width:0%;transition:width 0.5s ease;border-radius:100px"></div>
+        </div>
+        <div id="lvStatus" style="font-size:0.7rem;color:var(--muted);text-align:center">Waiting for attestors...</div>
+      </div>
+      <div id="lvLog" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-top:0.75rem;max-height:80px;overflow-y:auto;font-family:'SF Mono',monospace;font-size:0.6rem;color:var(--muted);line-height:1.8;display:none"></div>
+      <div id="lvResult" style="display:none;margin-top:1rem"></div>
+      <button class="buy-btn" id="lvBtn" style="background:#1a365d;margin-top:1rem;display:none" onclick="runLoanVerify()">Verify on Creditcoin</button>
+    </div>
+  </div>
 </div>
 
 <footer>
@@ -501,7 +533,106 @@ function selectBorrowAsset(asset) {
 
 async function verifyFromLoan(txHash, tokenId) {
   if (!wallet) return connectWallet();
+  lastPurchasedTokenId = tokenId;
+  lastPurchasedTxHash = txHash;
+
+  // Show the verification section on the loan page
+  const section = document.getElementById("loanVerifySection");
+  section.classList.remove("hidden");
+  document.getElementById("loanVerifyProperty").textContent = `Token #${tokenId} · TX: ${txHash.slice(0,14)}...`;
+  document.getElementById("loanVerifyProgress").style.display = "block";
+  document.getElementById("lvLog").style.display = "block";
+  document.getElementById("lvLog").innerHTML = "";
+  document.getElementById("lvResult").style.display = "none";
+  document.getElementById("lvBtn").style.display = "none";
+  document.getElementById("lvBar").style.background = "linear-gradient(90deg,var(--accent),#4a7c59)";
+  document.getElementById("lvStatus").style.color = "var(--muted)";
+  document.getElementById("lvStatus").style.fontWeight = "normal";
+
+  // Reset step indicators
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById("lvStep" + i).style.cssText = "flex:1;padding:0.6rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-align:center;font-size:0.7rem;color:var(--muted)";
+  }
+
+  // Create block chain
+  const blocksEl = document.getElementById("lvBlocks");
+  blocksEl.innerHTML = Array(16).fill(0).map((_, i) => `<div class="block-item${i < 5 ? ' confirmed' : i === 5 ? ' pending' : ''}" id="lvBlock${i}"></div>`).join("");
+
+  // Scroll to verification section
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const log = document.getElementById("lvLog");
+  const vLog = (msg, cls="") => { log.innerHTML += `<div class="${cls}">${msg}</div>`; log.scrollTop = log.scrollHeight; };
+  const setStep = (n) => {
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById("lvStep" + i);
+      if (i < n) el.style.cssText = "flex:1;padding:0.6rem;background:#ecfdf5;border:1px solid #059669;border-radius:8px;text-align:center;font-size:0.7rem;color:#059669;font-weight:600";
+      else if (i === n) el.style.cssText = "flex:1;padding:0.6rem;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;text-align:center;font-size:0.7rem;color:#3b82f6;font-weight:600";
+    }
+  };
+  const startTime = Date.now();
+  const bar = document.getElementById("lvBar");
+  const statusEl = document.getElementById("lvStatus");
+  const timeEl = document.getElementById("lvTime");
+
+  function updateBlocks(progress) {
+    const filled = Math.floor(progress / (100 / 16));
+    for (let i = 0; i < 16; i++) {
+      const b = document.getElementById("lvBlock" + i);
+      if (!b) continue;
+      b.className = "block-item";
+      if (i < filled) b.classList.add("confirmed");
+      else if (i === filled) b.classList.add("pending");
+    }
+    bar.style.width = progress + "%";
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    timeEl.textContent = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`;
+  }
+
+  updateBlocks(5);
+
   try {
+    // Step 1: Attestation check
+    setStep(1);
+    vLog("⏳ Checking block attestation status...");
+    statusEl.textContent = "Checking if block has been attested...";
+    updateBlocks(10);
+
+    let attested = false;
+    let pollCount = 0;
+    while (!attested && pollCount < 60) {
+      try {
+        const statusR = await fetch(API + "/attestation-status/" + txHash);
+        const statusD = await statusR.json();
+        pollCount++;
+        updateBlocks(10 + Math.min(55, (55 * pollCount / 60)));
+        if (statusD.attested) {
+          attested = true;
+          vLog(`✅ Block attested on Creditcoin`, "ok");
+          statusEl.textContent = `Block attested — confidence ${statusD.confidence}%`;
+          updateBlocks(65);
+        } else {
+          if (pollCount % 3 === 0) vLog(`⏳ Waiting for attestors...`);
+          await new Promise(r => setTimeout(r, 15000));
+        }
+      } catch(e) {
+        pollCount++;
+        await new Promise(r => setTimeout(r, 15000));
+      }
+    }
+
+    if (!attested) vLog("⚠️ Attestation taking longer, attempting proof...");
+
+    // Step 2+3: Proof + Receipt
+    setStep(2);
+    vLog("⏳ Generating proof via Attestcoin SDK...");
+    updateBlocks(70);
+
+    setStep(3);
+    vLog("⏳ Verifying via BlockProver precompile...");
+    statusEl.textContent = "Verifying cryptographic proof...";
+    updateBlocks(80);
+
     const r = await fetch(API + "/prove-and-mint", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
@@ -509,9 +640,50 @@ async function verifyFromLoan(txHash, tokenId) {
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    alert(`✅ Verified! Receipt #${d.after.receiptId}\nTX: https://creditcoin-testnet.blockscout.com/tx/${d.txHash}`);
-    loadLoanAssets(); // Refresh
-  } catch(e) { alert(`❌ ${e.message}`); }
+
+    updateBlocks(95);
+    await new Promise(r => setTimeout(r, 800));
+    updateBlocks(100);
+    for (let i = 0; i < 16; i++) {
+      const b = document.getElementById("lvBlock" + i);
+      if (b) b.className = "block-item attested";
+    }
+
+    vLog(`✅ Receipt #${d.after.receiptId} minted!`, "ok");
+    statusEl.textContent = "✅ Ownership verified on Creditcoin!";
+    statusEl.style.color = "var(--accent)";
+    statusEl.style.fontWeight = "600";
+    bar.style.background = "var(--accent)";
+
+    // Show result
+    document.getElementById("lvResult").style.display = "block";
+    document.getElementById("lvResult").innerHTML = `
+      <div style="background:var(--green-bg);border:1px solid #c6f6d5;border-radius:10px;padding:1.25rem">
+        <h4 style="color:var(--green);font-size:0.9rem;margin-bottom:0.75rem">✅ Verified!</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted)">Receipt</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)">#${d.after.receiptId}</div></div>
+          <div style="background:#fff;border:1px solid #c6f6d5;border-radius:8px;padding:0.6rem;text-align:center"><div style="font-size:0.6rem;color:var(--muted)">Block</div><div style="font-size:0.9rem;font-weight:700;color:var(--green)">${d.after.proof?.blockHeight || '—'}</div></div>
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #c6f6d5">
+          <a href="https://sepolia.etherscan.io/tx/${txHash}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:0.8rem">↗ Sepolia TX</a>
+          <a href="https://creditcoin-testnet.blockscout.com/tx/${d.txHash}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:0.8rem">↗ Creditcoin TX</a>
+        </div>
+      </div>
+    `;
+
+    // Save verification state
+    const vState = JSON.parse(localStorage.getItem("rwa_verified") || "{}")
+    vState[tokenId] = { txHash, receiptId: d.after.receiptId, creditcoinTx: d.txHash, timestamp: Date.now() };
+    localStorage.setItem("rwa_verified", JSON.stringify(vState));
+
+    // Refresh loan assets
+    loadLoanAssets();
+
+  } catch(e) {
+    vLog(`❌ Error: ${e.message}`, "er");
+    statusEl.textContent = "❌ Verification failed";
+    statusEl.style.color = "var(--red)";
+  }
 }
 
 async function borrowAgainstAsset() {
@@ -632,6 +804,8 @@ function selectTier(tier, price) {
 async function connectWallet() {
   if (!window.ethereum) return alert("Install MetaMask");
   const provider = new ethers.BrowserProvider(window.ethereum);
+  // Request persistent permission so wallet stays connected across tabs
+  await provider.send("wallet_requestPermissions", [{ eth_accounts: {} }]);
   await provider.send("eth_requestAccounts", []);
   const signer = await provider.getSigner();
   wallet = await signer.getAddress();
@@ -650,41 +824,38 @@ async function connectWallet() {
   }
 }
 
-// Auto-connect on page load if MetaMask is available
+// Auto-connect on page load — show wallet as connected if we have an address
+// This ensures the UI never shows "not connected" when user previously connected
 async function autoConnect() {
-  if (!window.ethereum) {
-    // No MetaMask — try localStorage fallback
-    const saved = localStorage.getItem("rwa_wallet");
-    if (saved) {
-      wallet = saved;
-      document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
-      document.getElementById("walletBtn").classList.add("connected");
-      updateUsdBalance();
-    }
-    return;
+  // 1. Check localStorage first (always show connected if we have saved address)
+  const saved = localStorage.getItem("rwa_wallet");
+  if (saved) {
+    wallet = saved;
+    document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
+    document.getElementById("walletBtn").classList.add("connected");
+    updateUsdBalance();
   }
-  try {
-    await new Promise(r => setTimeout(r, 300));
-    const accounts = await window.ethereum.request({ method: "eth_accounts" });
-    if (accounts && accounts.length > 0) {
-      wallet = accounts[0];
-      localStorage.setItem("rwa_wallet", wallet);
-      document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
-      document.getElementById("walletBtn").classList.add("connected");
-      updateUsdBalance();
-    } else {
-      // Fallback to localStorage
-      const saved = localStorage.getItem("rwa_wallet");
-      if (saved) {
-        wallet = saved;
+
+  // 2. If MetaMask available, try to sync with live account
+  if (window.ethereum) {
+    try {
+      await new Promise(r => setTimeout(r, 200));
+      // Try eth_accounts first (no popup) — if locked, returns empty
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (accounts && accounts.length > 0) {
+        wallet = accounts[0];
+        localStorage.setItem("rwa_wallet", wallet);
         document.getElementById("walletBtn").textContent = wallet.slice(0,6)+"..."+wallet.slice(-4);
         document.getElementById("walletBtn").classList.add("connected");
         updateUsdBalance();
       }
-    }
-    // Load loan assets if on loan page
-    if (document.getElementById("page-loan").classList.contains("active")) loadLoanAssets();
-  } catch(e) {}
+      // eth_accounts empty = MetaMask locked. Keep saved address, don't clear wallet.
+      // User will see their address. If they try to transact, connectWallet will prompt.
+    } catch(e) {}
+  }
+
+  // 3. Load loan assets if on loan page
+  if (wallet && document.getElementById("page-loan").classList.contains("active")) loadLoanAssets();
 }
 autoConnect();
 
@@ -751,7 +922,7 @@ async function buyShare() {
     const buyR = await fetch(API + "/buy", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ wallet, tier: selectedTier })
+      body: JSON.stringify({ wallet, tier: selectedTier, propertyName: currentProperty?.name || "Unknown Property" })
     });
     const buyD = await buyR.json();
     if (buyD.error) throw new Error(buyD.error);
