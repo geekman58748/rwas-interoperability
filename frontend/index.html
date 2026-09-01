@@ -28,7 +28,7 @@
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
 
 /* ── NAV ── */
-nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 3rem; }
+nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.88); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-bottom: 1px solid rgba(0,0,0,0.06); padding: 0 3rem; box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
 .nav-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 72px; }
 .logo { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
 .logo span { color: var(--accent); }
@@ -42,20 +42,27 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92)
 .page { display: none; }
 .page.active { display: block; }
 
-.hero-section { max-width: 1280px; margin: 0 auto; padding: 4rem 3rem 2rem; }
-.hero-section h1 { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 0.75rem; }
-.hero-section h1 em { font-style: normal; color: var(--accent); }
-.hero-section p { font-size: 1.05rem; color: var(--muted); max-width: 520px; line-height: 1.6; }
-.stats-row { display: flex; gap: 3rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
-.stat .num { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; }
-.stat .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.1rem; }
+.hero-section { max-width: 1280px; margin: 0 auto; padding: 5rem 3rem 3rem; position: relative; }
+.hero-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%; background: radial-gradient(ellipse at 20% 50%, rgba(45,90,39,0.04) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(184,134,11,0.03) 0%, transparent 40%); pointer-events: none; z-index: -1; }
+.hero-section h1 { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
+.hero-section h1 em { font-style: normal; color: var(--accent); position: relative; }
+.hero-section h1 em::after { content: ''; position: absolute; bottom: 2px; left: 0; right: 0; height: 3px; background: var(--accent); opacity: 0.15; border-radius: 2px; }
+.hero-section p { font-size: 1.1rem; color: var(--muted); max-width: 540px; line-height: 1.7; }
+.stats-row { display: flex; gap: 3rem; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+.stat { transition: transform 0.2s; }
+.stat:hover { transform: translateY(-2px); }
+.stat .num { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; }
+.stat .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.2rem; }
 
 .listings { max-width: 1280px; margin: 0 auto; padding: 2rem 3rem 4rem; }
 .listings h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-.listing-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all 0.25s; }
-.listing-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
-.listing-img { height: 200px; position: relative; }
+.listing-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.listing-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.1); transform: translateY(-4px); border-color: rgba(45,90,39,0.2); }
+.listing-card:active { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.listing-img { height: 220px; position: relative; overflow: hidden; }
+.listing-card:hover .listing-img img { transform: scale(1.03); }
+.listing-img img { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 .listing-img .gradient { width: 100%; height: 100%; }
 .g1 { background: linear-gradient(135deg, #2d5a27 0%, #4a7c59 100%); }
 .g2 { background: linear-gradient(135deg, #b8860b 0%, #daa520 100%); }
@@ -63,7 +70,7 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92)
 .g4 { background: linear-gradient(135deg, #744210 0%, #b8860b 100%); }
 .g5 { background: linear-gradient(135deg, #553c9a 0%, #9f7aea 100%); }
 .g6 { background: linear-gradient(135deg, #1a365d 0%, #4299e1 100%); }
-.listing-badge { position: absolute; top: 1rem; left: 1rem; background: rgba(255,255,255,0.95); color: var(--text); font-size: 0.65rem; font-weight: 600; padding: 0.3rem 0.7rem; border-radius: 100px; backdrop-filter: blur(4px); }
+.listing-badge { position: absolute; top: 1rem; left: 1rem; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); color: var(--text); font-size: 0.65rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 100px; border: 1px solid rgba(255,255,255,0.5); letter-spacing: 0.03em; }
 .listing-body { padding: 1.25rem; }
 .listing-body h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; margin-bottom: 0.25rem; }
 .listing-body .loc { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; }
@@ -160,6 +167,29 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92)
 
 .hidden { display: none !important; }
 
+/* ── How It Works ── */
+.how-section { max-width:1280px; margin:0 auto; padding:4rem 3rem; border-top:1px solid var(--border); }
+.how-inner { margin:0 auto; }
+.how-header { text-align:center; margin-bottom:3rem; }
+.how-label { display:inline-block; background:var(--accent-light); color:var(--accent); font-size:0.7rem; font-weight:600; padding:0.35rem 1rem; border-radius:100px; letter-spacing:0.06em; text-transform:uppercase; }
+.how-steps { display:flex; align-items:flex-start; gap:1rem; }
+.how-step { flex:1; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.75rem 1.5rem; transition:all 0.3s; position:relative; }
+.how-step:hover { border-color:var(--accent); box-shadow:0 8px 30px rgba(45,90,39,0.08); transform:translateY(-2px); }
+.how-step-num { font-family:'Playfair Display',serif; font-size:2.5rem; font-weight:700; color:var(--accent); opacity:0.1; position:absolute; top:0.75rem; right:1rem; }
+.how-step-icon { font-size:1.8rem; margin-bottom:0.75rem; }
+.how-step h4 { font-family:'Playfair Display',serif; font-size:1rem; margin-bottom:0.5rem; }
+.how-step p { font-size:0.8rem; color:var(--muted); line-height:1.6; }
+.how-step-arrow { display:flex; align-items:center; justify-content:center; font-size:1.2rem; color:var(--border); padding-top:3rem; flex-shrink:0; }
+
+/* ── Why Attestcoin ── */
+.why-section { max-width:1280px; margin:0 auto; padding:0 3rem 4rem; }
+.why-inner { display:grid; grid-template-columns:repeat(4,1fr); gap:1.25rem; }
+.why-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; transition:all 0.3s; }
+.why-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(45,90,39,0.06); transform:translateY(-2px); }
+.why-icon { font-size:1.5rem; margin-bottom:0.75rem; }
+.why-card h4 { font-family:'Playfair Display',serif; font-size:0.95rem; margin-bottom:0.35rem; }
+.why-card p { font-size:0.8rem; color:var(--muted); line-height:1.6; }
+
 /* ── Attestation Block Chain ── */
 .block-item { width:100%;height:28px;border-radius:4px;background:var(--bg);border:1px solid var(--border);transition:all 0.4s ease;position:relative}
 .block-item.confirmed { background:var(--accent-light);border-color:var(--accent);opacity:0.5}
@@ -169,16 +199,32 @@ nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.92)
 @keyframes blockConfirm { 0%{background:#ecfdf5;border-color:#059669} 100%{background:var(--accent);border-color:var(--accent)} }
 
 /* ── FOOTER ── */
-footer { max-width: 1280px; margin: 2rem auto 0; padding: 2rem 3rem; border-top: 1px solid var(--border); text-align: center; }
-footer p { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
-footer a { color: var(--accent); text-decoration: none; }
+footer { max-width:1280px; margin:0 auto; padding:3rem 3rem; border-top:1px solid var(--border); text-align:center; background:linear-gradient(180deg, var(--bg) 0%, #f0efeb 100%); }
+footer p { font-size:0.8rem; color:var(--muted); line-height:1.9; }
+footer a { color:var(--accent); text-decoration:none; font-weight:500; }
+footer a:hover { text-decoration:underline; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-bottom:1rem; }
+.footer-links a { font-size:0.75rem; color:var(--muted); text-decoration:none; transition:color 0.2s; }
+.footer-links a:hover { color:var(--accent); }
+.footer-badge { display:inline-flex; align-items:center; gap:0.4rem; background:var(--accent-light); color:var(--accent); font-size:0.65rem; font-weight:600; padding:0.3rem 0.8rem; border-radius:100px; margin-top:1rem; }
 
+@media (max-width: 1024px) {
+  .how-steps { flex-wrap:wrap; }
+  .how-step-arrow { display:none; }
+  .how-step { flex:1 1 calc(50% - 1rem); }
+  .why-inner { grid-template-columns:repeat(2,1fr); }
+}
 @media (max-width: 768px) {
-  .grid { grid-template-columns: 1fr; }
-  .detail-content { grid-template-columns: 1fr; }
-  .hero-section h1 { font-size: 2rem; }
-  nav { padding: 0 1.5rem; }
-  .hero-section, .listings, .detail-content, footer { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .grid { grid-template-columns:1fr; }
+  .detail-content { grid-template-columns:1fr; }
+  .hero-section h1 { font-size:2rem; }
+  .hero-section { padding:3rem 1.5rem 2rem; }
+  nav { padding:0 1.5rem; }
+  .hero-section, .listings, .detail-content, footer, .how-section, .why-section { padding-left:1.5rem; padding-right:1.5rem; }
+  .how-step { flex:1 1 100%; }
+  .why-inner { grid-template-columns:1fr; }
+  .stats-row { gap:1.5rem; }
+  .listing-card { border-radius:10px; }
 }
 </style>
 </head>
@@ -213,6 +259,73 @@ footer a { color: var(--accent); text-decoration: none; }
       <div class="hero-chip"><span style="color:var(--green)">✓</span> Cross-Chain Verification</div>
     </div>
   </div>
+
+  <!-- How It Works -->
+  <div class="how-section">
+    <div class="how-inner">
+      <div class="how-header">
+        <span class="how-label">How It Works</span>
+        <h2 style="font-family:'Playfair Display',serif;font-size:2rem;margin-top:0.5rem">From Purchase to Verified Ownership</h2>
+        <p style="font-size:0.95rem;color:var(--muted);max-width:560px;margin-top:0.5rem;line-height:1.6">No bridges. No custodians. Just cryptographic proof that your Ethereum ownership is real — verified by Attestcoin's decentralized attestor network.</p>
+      </div>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="how-step-num">01</div>
+          <div class="how-step-icon">🏠</div>
+          <h4>Purchase on Ethereum</h4>
+          <p>Buy fractional shares of real-world properties using test USD tokens on Sepolia. Your ownership is recorded as an ERC-721 on Ethereum.</p>
+        </div>
+        <div class="how-step-arrow">→</div>
+        <div class="how-step">
+          <div class="how-step-num">02</div>
+          <div class="how-step-icon">⛓️</div>
+          <h4>Attestors Verify</h4>
+          <p>Attestcoin's distributed attestor network observes Ethereum, reaches consensus, and commits cryptographic proofs to Creditcoin.</p>
+        </div>
+        <div class="how-step-arrow">→</div>
+        <div class="how-step">
+          <div class="how-step-num">03</div>
+          <div class="how-step-icon">✅</div>
+          <h4>Receipt Minted</h4>
+          <p>A VerifiedShare receipt is minted on Creditcoin — a transferable, re-verifiable proof of your Ethereum ownership. No bridge required.</p>
+        </div>
+        <div class="how-step-arrow">→</div>
+        <div class="how-step">
+          <div class="how-step-num">04</div>
+          <div class="how-step-icon">💰</div>
+          <h4>Borrow CUSD</h4>
+          <p>Use your verified receipt as collateral. CUSD stablecoins are minted to your wallet — your Ethereum asset never leaves Ethereum.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why Attestcoin -->
+  <div class="why-section">
+    <div class="why-inner">
+      <div class="why-card">
+        <div class="why-icon">🔒</div>
+        <h4>No Bridge Risk</h4>
+        <p>Your asset stays on Ethereum. There's nothing to hack, lock, or drain. The proof is the product.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🌐</div>
+        <h4>Decentralized Attestors</h4>
+        <p>Multiple independent nodes verify your ownership. No single oracle controls the truth.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🔐</div>
+        <h4>Precompile Security</h4>
+        <p>Proofs are verified by Creditcoin's native precompile — chain-level consensus, not a smart contract.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">⚡</div>
+        <h4>7-Layer Verification</h4>
+        <p>Merkle proofs, continuity proofs, replay guards, multi-condition checks — not a single flag.</p>
+      </div>
+    </div>
+  </div>
+
   <div class="listings">
     <h2>Available Properties</h2>
     <div class="grid" id="listingsGrid"></div>
@@ -466,7 +579,15 @@ footer a { color: var(--accent); text-decoration: none; }
 </div>
 
 <footer>
-  <p>Powered by <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Protocol</a> · Ethereum → Creditcoin · No bridge, no custodian<br>Ethereum remains the source of truth for the underlying asset at all times.</p>
+  <div class="footer-links">
+    <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Docs</a>
+    <a href="https://creditcoin-testnet.blockscout.com" target="_blank">Creditcoin Explorer</a>
+    <a href="https://sepolia.etherscan.io" target="_blank">Sepolia Explorer</a>
+    <a href="https://github.com/geekman58748/rwas-interoperability" target="_blank">Source Code</a>
+  </div>
+  <p>Powered by <a href="https://docs.attestcoin.org" target="_blank">Attestcoin Protocol</a> · Ethereum → Creditcoin · No bridge, no custodian</p>
+  <p style="font-size:0.7rem;margin-top:0.5rem;opacity:0.7">Ethereum remains the source of truth for the underlying asset at all times. The Creditcoin receipt is a live, re-verifiable read of that truth — not a replacement, transfer, or migration of the asset.</p>
+  <div class="footer-badge">⚡ Built for Hackathon · RWA Track</div>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
