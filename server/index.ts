@@ -493,7 +493,7 @@ app.post("/api/borrow", async (req, res) => {
     const { wallet, assetId, receiptId } = req.body;
     if (!wallet || !assetId) return res.status(400).json({ error: "wallet and assetId required" });
 
-    const { creditcoinProvider: cp, sepoliaSigner: s } = getProviders();
+    const { sourceProvider: sp, creditcoinProvider: cp, sepoliaSigner: s } = getProviders();
     if (!s || !ASC_ADDRESS || !CUSD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
 
     // 1. Check ownership is verified on Creditcoin
@@ -505,14 +505,14 @@ app.post("/api/borrow", async (req, res) => {
     const rid = await asc.getReceiptTokenId(wallet, BigInt(assetId));
     if (rid === 0n) return res.status(400).json({ error: "No receipt found. Verify first." });
 
-    const VRS_ABI = ["function isValid(uint256) view returns (bool)", "function tokenTier(uint256) view returns (uint256)"];
+    const VRS_ABI = ["function isValid(uint256) view returns (bool)"];
     const vrs = new ethers.Contract(VRS_ADDRESS, VRS_ABI, cp);
     const receiptValid = await vrs.isValid(rid);
     if (!receiptValid) return res.status(400).json({ error: "Receipt is not valid (stale or superseded)" });
 
-    // 3. Calculate loan amount based on tier
+    // 3. Calculate loan amount based on tier (read from Sepolia contract)
     const ASSET_ABI_LOCAL = ["function tokenTier(uint256) view returns (uint256)", "function propertyValue() view returns (uint256)"];
-    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI_LOCAL, cp);
+    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI_LOCAL, sp);
     const tier = await asset.tokenTier(BigInt(assetId));
     const propertyValue = await asset.propertyValue();
     // Loan = 50% of tier value (conservative LTV)
