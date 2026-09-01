@@ -549,16 +549,14 @@ app.get("/api/demo/status", (_req, res) => {
   });
 });
 
-app.post("/api/demo/run", async (_req, res) => {
-  const steps: any[] = [];
+// Quick demo: buy only (returns fast)
+app.post("/api/demo/buy", async (_req, res) => {
   try {
-    const { sourceProvider: sp, creditcoinProvider: cp, sepoliaSigner: ss, signer: cs } = getProviders();
-    if (!ss || !cs || !ASSET_ADDRESS || !USD_ADDRESS || !ASC_ADDRESS || !VRS_ADDRESS) {
+    const { sourceProvider: sp, sepoliaSigner: ss } = getProviders();
+    if (!ss || !ASSET_ADDRESS || !USD_ADDRESS) {
       return res.status(500).json({ error: "Server not configured" });
     }
     const WALLET = ss.address;
-
-    // ── Step 1: Buy share ──
     const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
     const price = await assetRead.tierPrice(10);
     const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, ss);
@@ -576,48 +574,39 @@ app.post("/api/demo/run", async (_req, res) => {
     }
     const propertyName = await assetRead.propertyName();
     savePurchase({ wallet: WALLET.toLowerCase(), tokenId, tier: 10, propertyName, propertyValue: "2400000", txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, timestamp: Date.now() });
-    steps.push({ step: "buy", status: "done", tokenId, txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, etherscan: `https://sepolia.etherscan.io/tx/${buyReceipt.hash}` });
-
-    // ── Step 2: Wait for attestation ──
-    let attested = false;
-    let attempts = 0;
-    const maxAttempts = 60;
-    while (!attested && attempts < maxAttempts) {
-      attempts++;
-      try {
-        const pb = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
-        const result = await pb.getProof(buyReceipt.hash);
-        if (result.success) { attested = true; }
-        else { await new Promise(r => setTimeout(r, 15000)); }
-      } catch { await new Promise(r => setTimeout(r, 15000)); }
-    }
-    steps.push({ step: "attest", status: attested ? "done" : "timeout", attempts, message: attested ? `Attested after ${attempts} polls` : `Not attested after ${maxAttempts} attempts` });
-
-    // ── Step 3: Verify + mint receipt ──
-    if (attested) {
-      const pb = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
-      const result = await pb.getProof(buyReceipt.hash);
-      if (result.success && result.data) {
-        const bp = new PrecompileBlockProver(cp);
-        const isValid = await bp.verifySingle(result.data.chainKey, result.data.headerNumber, result.data.txBytes, result.data.merkleProof, result.data.continuityProof);
-        steps.push({ step: "precompile", status: isValid ? "done" : "failed", message: isValid ? "Proof verified by BlockProver precompile" : "Proof verification failed" });
-
-        if (isValid) {
-          const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, cs);
-          const beforeVerified = await asc.isVerified(WALLET, BigInt(tokenId));
-          const tx = await asc.verifyAndMintReceipt(result.data.chainKey, result.data.headerNumber, WALLET, BigInt(tokenId), buyReceipt.hash, true);
-          const vReceipt = await tx.wait();
-          const afterVerified = await asc.isVerified(WALLET, BigInt(tokenId));
-          const receiptId = await asc.getReceiptTokenId(WALLET, BigInt(tokenId));
-          steps.push({ step: "verify", status: "done", beforeVerified, afterVerified, receiptId: receiptId.toString(), txHash: vReceipt.hash, blockscout: `https://creditcoin-testnet.blockscout.com/tx/${vReceipt.hash}` });
-        }
-      }
-    }
-
-    res.json({ success: true, wallet: WALLET, steps });
+    res.json({ success: true, tokenId, txHash: buyReceipt.hash, blockNumber: buyReceipt.blockNumber, etherscan: `https://sepolia.etherscan.io/tx/${buyReceipt.hash}` });
   } catch (err: any) {
-    steps.push({ step: "error", status: "failed", message: err.message });
-    res.json({ success: false, wallet: ss?.address, steps });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Quick demo: verify only (proof + receipt)
+app.post("/api/demo/verify", async (req, res) => {
+  try {
+    const { txHash, tokenId } = req.body;
+    if (!txHash) return res.status(400).json({ error: "txHash required" });
+    const { creditcoinProvider: cp, sepoliaSigner: ss, signer: cs } = getProviders();
+    if (!cs || !ASC_ADDRESS || !VRS_ADDRESS) return res.status(500).json({ error: "Server not configured" });
+    const WALLET = ss?.address || "0xe1223a9E37810F33049714cd607A71CAda34dDEC";
+    const assetId = BigInt(tokenId || 0);
+    // 1. Check attestation
+    const pb = new ProofBuilder(SEPOLIA_CHAIN_KEY, PROOF_BUILDER_URL);
+    const result = await pb.getProof(txHash);
+    if (!result.success) return res.status(500).json({ error: result.error || "Not yet attested" });
+    // 2. Verify via precompile
+    const bp = new PrecompileBlockProver(cp);
+    const isValid = await bp.verifySingle(result.data!.chainKey, result.data!.headerNumber, result.data!.txBytes, result.data!.merkleProof, result.data!.continuityProof);
+    if (!isValid) return res.status(500).json({ error: "Proof verification failed" });
+    // 3. Mint receipt
+    const asc = new ethers.Contract(ASC_ADDRESS, ASC_ABI, cs);
+    const beforeVerified = await asc.isVerified(WALLET, assetId);
+    const tx = await asc.verifyAndMintReceipt(result.data!.chainKey, result.data!.headerNumber, WALLET, assetId, txHash, true);
+    const vReceipt = await tx.wait();
+    const afterVerified = await asc.isVerified(WALLET, assetId);
+    const receiptId = await asc.getReceiptTokenId(WALLET, assetId);
+    res.json({ success: true, beforeVerified, afterVerified, receiptId: receiptId.toString(), txHash: vReceipt.hash, blockscout: `https://creditcoin-testnet.blockscout.com/tx/${vReceipt.hash}` });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

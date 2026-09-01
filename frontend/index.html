@@ -6,228 +6,6 @@
 <title>AttestRWA — Verified Real World Assets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f8f7f4;
-  --card: #ffffff;
-  --border: #e8e6e1;
-  --text: #1a1a1a;
-  --muted: #8a8580;
-  --accent: #2d5a27;
-  --accent-light: #e8f0e6;
-  --gold: #b8860b;
-  --gold-light: #fdf6e3;
-  --green: #2d5a27;
-  --green-bg: #e8f0e6;
-  --red: #9b2c2c;
-  --radius: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); }
-
-/* ── NAV ── */
-nav { position: sticky; top: 0; z-index: 100; background: rgba(248,247,244,0.88); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-bottom: 1px solid rgba(0,0,0,0.06); padding: 0 3rem; box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
-.nav-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 72px; }
-.logo { font-family: 'DM Sans', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
-.logo span { color: var(--accent); }
-.nav-right { display: flex; align-items: center; gap: 2rem; }
-.nav-right a { color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; }
-.nav-right a:hover { color: var(--text); }
-.wallet-pill { display: flex; align-items: center; gap: 0.5rem; background: var(--text); color: #fff; padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: none; font-family: inherit; }
-.wallet-pill.connected { background: var(--accent); }
-
-/* ── PAGE: LISTINGS ── */
-.page { display: none; }
-.page.active { display: block; }
-
-.hero-section { max-width: 1280px; margin: 0 auto; padding: 5rem 3rem 3rem; position: relative; overflow: hidden; border-radius: 0 0 24px 24px; }
-.hero-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&h=800&fit=crop&q=80') center/cover; z-index: 0; }
-.hero-bg::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(248,247,244,0.92) 0%, rgba(248,247,244,0.75) 40%, rgba(248,247,244,0.6) 100%); }
-.hero-section > * { position: relative; z-index: 1; }
-.hero-section h1 { font-family: 'DM Sans', sans-serif; font-size: 3.8rem; font-weight: 700; line-height: 1.05; letter-spacing: -0.04em; margin-bottom: 1rem; }
-.hero-section h1 em { font-style: normal; color: var(--accent); }
-.hero-section p { font-size: 1.1rem; color: var(--muted); max-width: 540px; line-height: 1.7; }
-.stats-row { display: flex; gap: 3rem; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
-.stat { transition: transform 0.2s; }
-.stat:hover { transform: translateY(-2px); }
-.stat .num { font-family: 'DM Sans', sans-serif; font-size: 1.8rem; font-weight: 700; }
-.stat .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.2rem; }
-
-.listings { max-width: 1280px; margin: 0 auto; padding: 2rem 3rem 4rem; }
-.listings h2 { font-family: 'DM Sans', sans-serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-.listing-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-.listing-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.1); transform: translateY(-4px); border-color: rgba(45,90,39,0.2); }
-.listing-card:active { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-.listing-img { height: 220px; position: relative; overflow: hidden; }
-.listing-card:hover .listing-img img { transform: scale(1.03); }
-.listing-img img { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-.listing-img .gradient { width: 100%; height: 100%; }
-.g1 { background: linear-gradient(135deg, #2d5a27 0%, #4a7c59 100%); }
-.g2 { background: linear-gradient(135deg, #b8860b 0%, #daa520 100%); }
-.g3 { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); }
-.g4 { background: linear-gradient(135deg, #744210 0%, #b8860b 100%); }
-.g5 { background: linear-gradient(135deg, #553c9a 0%, #9f7aea 100%); }
-.g6 { background: linear-gradient(135deg, #1a365d 0%, #4299e1 100%); }
-.listing-badge { position: absolute; top: 1rem; left: 1rem; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); color: var(--text); font-size: 0.65rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 100px; border: 1px solid rgba(255,255,255,0.5); letter-spacing: 0.03em; }
-.listing-body { padding: 1.25rem; }
-.listing-body h3 { font-family: 'DM Sans', sans-serif; font-size: 1.15rem; margin-bottom: 0.25rem; }
-.listing-body .loc { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; }
-.listing-footer { display: flex; justify-content: space-between; align-items: baseline; }
-.listing-price { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
-.listing-type { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-
-/* ── PAGE: DETAIL ── */
-.detail-hero { position: relative; height: 360px; overflow: hidden; }
-.detail-hero .gradient { width: 100%; height: 100%; }
-.detail-hero .overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 3rem; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: #fff; }
-.detail-hero .overlay h1 { font-family: 'DM Sans', sans-serif; font-size: 2.2rem; margin-bottom: 0.25rem; }
-.detail-hero .overlay p { font-size: 0.9rem; opacity: 0.8; }
-
-.detail-content { max-width: 1280px; margin: 0 auto; padding: 2rem 3rem; display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
-
-.info-section { margin-bottom: 2rem; }
-.info-section h3 { font-family: 'DM Sans', sans-serif; font-size: 1.2rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.info-item { padding: 0.75rem; background: var(--bg); border-radius: 8px; }
-.info-item .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.info-item .value { font-size: 0.95rem; font-weight: 600; margin-top: 0.15rem; }
-
-/* ── BUY PANEL ── */
-.buy-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; position: sticky; top: 90px; }
-.buy-panel h3 { font-family: 'DM Sans', sans-serif; font-size: 1.1rem; margin-bottom: 1rem; }
-.tier-options { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-.tier-btn { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; border: 2px solid var(--border); border-radius: 10px; background: var(--card); cursor: pointer; transition: all 0.15s; font-family: inherit; }
-.tier-btn:hover { border-color: var(--accent); }
-.tier-btn.selected { border-color: var(--accent); background: var(--accent-light); }
-.tier-btn .tier-pct { font-size: 0.95rem; font-weight: 600; }
-.tier-btn .tier-price { font-size: 0.85rem; color: var(--accent); font-weight: 600; }
-.tier-btn .tier-stock { font-size: 0.7rem; color: var(--muted); }
-.buy-total { display: flex; justify-content: space-between; padding: 0.75rem 0; border-top: 1px solid var(--border); margin-bottom: 1rem; font-weight: 600; }
-.buy-btn { width: 100%; padding: 0.85rem; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
-.buy-btn:hover { background: #234a1e; }
-.buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.buy-note { font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: 0.75rem; line-height: 1.5; }
-
-.usd-balance { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; background: var(--gold-light); border-radius: 8px; margin-bottom: 1rem; font-size: 0.8rem; }
-.usd-balance .bal { font-weight: 600; color: var(--gold); }
-.usd-balance .faucet-btn { background: none; border: 1px solid var(--gold); color: var(--gold); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.7rem; cursor: pointer; font-family: inherit; }
-
-/* ── RESULT ── */
-.result-panel { background: var(--green-bg); border: 1px solid #c6f6d5; border-radius: var(--radius); padding: 1.25rem; margin-top: 1rem; }
-.result-panel h4 { color: var(--green); font-size: 0.9rem; margin-bottom: 0.5rem; }
-.result-row { display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.8rem; }
-.result-row .r-label { color: var(--muted); }
-.result-row .r-value { font-weight: 600; }
-.tx-link { color: var(--accent); text-decoration: none; font-weight: 500; }
-.tx-link:hover { text-decoration: underline; }
-
-/* ── Animations ── */
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.anim-fade-up { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
-.anim-fade-up-d1 { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards; opacity: 0; }
-.anim-fade-up-d2 { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
-.anim-fade-up-d3 { animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards; opacity: 0; }
-.anim-slide-right { animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; opacity: 0; }
-
-.hero-section h1 { overflow: visible; animation: heroTextIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
-@keyframes heroTextIn { from { opacity: 0; transform: translateY(16px); letter-spacing: 0.02em; } to { opacity: 1; transform: translateY(0); letter-spacing: -0.04em; } }
-
-.hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 600; padding: 0.4rem 1rem; border-radius: 100px; margin-bottom: 1.25rem; letter-spacing: 0.04em; text-transform: uppercase; }
-.hero-badge-dot { width: 6px; height: 6px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: pulse 2s infinite; }
-
-.hero-chip { display: inline-flex; align-items: center; background: var(--card); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 500; color: var(--text); transition: all 0.25s; letter-spacing: 0.01em; }
-.hero-chip:hover { border-color: var(--accent); background: var(--accent-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,90,39,0.06); }
-
-@keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.stat .num { animation: countUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-.listing-card { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
-.listing-card:nth-child(1) { animation-delay: 0.05s; }
-.listing-card:nth-child(2) { animation-delay: 0.12s; }
-.listing-card:nth-child(3) { animation-delay: 0.19s; }
-.listing-card:nth-child(4) { animation-delay: 0.26s; }
-.listing-card:nth-child(5) { animation-delay: 0.33s; }
-.listing-card:nth-child(6) { animation-delay: 0.40s; }
-
-.page-transition { animation: fadeIn 0.25s ease-out; }
-
-.result-panel { animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-.loading-shimmer { background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-
-.hidden { display: none !important; }
-
-/* ── Scroll Blur ── */
-.scroll-blur { transition: filter 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1); filter: blur(0px); opacity: 1; }
-.scroll-blur.blurred { filter: blur(3px); opacity: 0.5; }
-
-/* ── How It Works ── */
-.how-section { max-width:1280px; margin:0 auto; padding:4rem 3rem; border-top:1px solid var(--border); }
-.how-inner { margin:0 auto; }
-.how-header { text-align:center; margin-bottom:3rem; }
-.how-label { display:inline-block; background:var(--accent-light); color:var(--accent); font-size:0.7rem; font-weight:600; padding:0.35rem 1rem; border-radius:100px; letter-spacing:0.06em; text-transform:uppercase; }
-.how-steps { display:flex; align-items:flex-start; gap:1.25rem; }
-.how-step { flex:1; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.75rem 1.5rem; transition:all 0.3s; position:relative; }
-.how-step:hover { border-color:var(--accent); box-shadow:0 8px 30px rgba(45,90,39,0.08); transform:translateY(-2px); }
-.how-step-num { display:inline-block; background:var(--accent); color:#fff; font-size:0.65rem; font-weight:600; width:24px; height:24px; border-radius:50%; text-align:center; line-height:24px; margin-bottom:1rem; letter-spacing:0.02em; }
-.how-step h4 { font-size:1rem; font-weight:600; margin-bottom:0.5rem; }
-.how-step p { font-size:0.8rem; color:var(--muted); line-height:1.65; }
-.how-step-arrow { display:flex; align-items:center; justify-content:center; font-size:0.8rem; color:var(--border); padding-top:3rem; flex-shrink:0; }
-
-/* ── Why Attestcoin ── */
-.why-section { max-width:1280px; margin:0 auto; padding:0 3rem 4rem; }
-.why-inner { display:grid; grid-template-columns:repeat(4,1fr); gap:1.25rem; }
-.why-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; transition:all 0.3s; }
-.why-card:hover { border-color:var(--accent); box-shadow:0 6px 24px rgba(45,90,39,0.06); transform:translateY(-2px); }
-.why-icon { width:36px; height:36px; background:var(--accent-light); border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:0.75rem; font-size:0.7rem; font-weight:700; color:var(--accent); }
-.why-card h4 { font-size:0.95rem; font-weight:600; margin-bottom:0.35rem; }
-.why-card p { font-size:0.8rem; color:var(--muted); line-height:1.6; }
-
-/* ── Attestation Block Chain ── */
-.block-item { width:100%;height:28px;border-radius:4px;background:var(--bg);border:1px solid var(--border);transition:all 0.4s ease;position:relative}
-.block-item.confirmed { background:var(--accent-light);border-color:var(--accent);opacity:0.5}
-.block-item.pending { background:#ecfdf5;border-color:#059669;animation:blockPulse 1.2s ease infinite}
-.block-item.attested { background:var(--accent);border-color:var(--accent);opacity:1}
-@keyframes blockPulse { 0%,100%{opacity:1;transform:scaleY(1)} 50%{opacity:0.7;transform:scaleY(1.15)} }
-@keyframes blockConfirm { 0%{background:#ecfdf5;border-color:#059669} 100%{background:var(--accent);border-color:var(--accent)} }
-
-/* ── FOOTER ── */
-footer { max-width:1280px; margin:0 auto; padding:3rem 3rem; border-top:1px solid var(--border); text-align:center; background:linear-gradient(180deg, var(--bg) 0%, #f0efeb 100%); }
-footer p { font-size:0.8rem; color:var(--muted); line-height:1.9; }
-footer a { color:var(--accent); text-decoration:none; font-weight:500; }
-footer a:hover { text-decoration:underline; }
-.footer-links { display:flex; justify-content:center; gap:2rem; margin-bottom:1rem; }
-.footer-links a { font-size:0.75rem; color:var(--muted); text-decoration:none; transition:color 0.2s; }
-.footer-links a:hover { color:var(--accent); }
-.footer-badge { display:inline-flex; align-items:center; gap:0.4rem; background:var(--accent-light); color:var(--accent); font-size:0.65rem; font-weight:600; padding:0.3rem 0.8rem; border-radius:100px; margin-top:1rem; }
-
-@media (max-width: 1024px) {
-  .how-steps { flex-wrap:wrap; }
-  .how-step-arrow { display:none; }
-  .how-step { flex:1 1 calc(50% - 1rem); }
-  .why-inner { grid-template-columns:repeat(2,1fr); }
-}
-@media (max-width: 768px) {
-  .grid { grid-template-columns:1fr; }
-  .detail-content { grid-template-columns:1fr; }
-  .hero-section h1 { font-size:2rem; }
-  .hero-section { padding:3rem 1.5rem 2rem; }
-  nav { padding:0 1.5rem; }
-  .hero-section, .listings, .detail-content, footer, .how-section, .why-section { padding-left:1.5rem; padding-right:1.5rem; }
-  .how-step { flex:1 1 100%; }
-  .why-inner { grid-template-columns:1fr; }
-  .stats-row { gap:1.5rem; }
-  .listing-card { border-radius:10px; }
-}
-</style>
 </head>
 <body>
 
@@ -835,7 +613,7 @@ async function borrowAgainstAsset() {
   if (!selectedBorrowAsset || !wallet) return;
   const btn = document.getElementById("borrowBtn");
   btn.disabled = true;
-  btn.textContent = "Processing...";
+  btn.textContent = "Purchasing...";
   try {
     const r = await fetch(API + "/borrow", {
       method: "POST",
@@ -1061,13 +839,13 @@ async function buyShare() {
   if (!selectedTier) return;
   const btn = document.getElementById("buyBtn");
   btn.disabled = true;
-  btn.textContent = "Processing...";
+  btn.textContent = "Purchasing...";
 
   try {
     // If no wallet connected, run full demo server-side
     if (!wallet) {
-      document.getElementById("buyResult").innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted)"><div style="margin-bottom:0.5rem">Running full demo server-side...</div><div style="font-size:0.75rem">Buy + Attest + Verify + Receipt — no wallet needed</div></div>';
-      const demoR = await fetch(API + "/demo/run", { method: "POST" });
+      document.getElementById("buyResult").innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted)"><div class="spin" style="display:inline-block;border-color:rgba(0,0,0,0.1);border-top-color:var(--accent);width:20px;height:20px;margin-bottom:0.5rem"></div><div style="margin-bottom:0.25rem">Purchasing share on blockchain...</div><div style="font-size:0.75rem">Confirming transaction. This usually takes 15-30 seconds.</div></div>';
+      const demoR = await fetch(API + "/demo/buy", { method: "POST" });
       const demoD = await demoR.json();
       if (demoD.error) throw new Error(demoD.error);
       // Find the buy and verify steps
@@ -1374,59 +1152,81 @@ if (heroSection) {
 }
 
 // ── One-Click Demo ──
+function demoStep(icon, title, detail, link) {
+  const el = document.createElement('div');
+  const bg = icon === 'done' ? 'var(--accent)' : icon === 'failed' ? 'var(--red)' : 'var(--border)';
+  const sym = icon === 'done' ? '\u2713' : icon === 'failed' ? '\u2717' : '<div class="spin"></div>';
+  el.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:0.75rem;transition:all 0.3s';
+  el.innerHTML = '<div style="width:28px;height:28px;background:' + bg + ';border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.65rem;color:#fff;font-weight:600;overflow:hidden">' + sym + '</div><div style="flex:1"><div style="font-weight:600;font-size:0.85rem;margin-bottom:0.25rem">' + title + '</div><div style="font-size:0.75rem;color:var(--muted);line-height:1.5">' + detail + '</div>' + (link ? '<a href="' + link + '" target="_blank" style="font-size:0.7rem;color:var(--accent);text-decoration:none;margin-top:0.35rem;display:inline-block">View on Explorer \u2197</a>' : '') + '</div>';
+  return el;
+}
+
 async function runDemo() {
   const btn = document.getElementById('demoBtn');
   const btnText = document.getElementById('demoBtnText');
-  const btnSub = document.getElementById('demoBtnSub');
   const resultDiv = document.getElementById('demoResult');
   const stepsDiv = document.getElementById('demoSteps');
   btn.disabled = true;
-  btnText.textContent = 'Running demo...';
-  btnSub.textContent = '';
+  btnText.textContent = 'Purchasing asset...';
   btn.style.opacity = '0.7';
   resultDiv.style.display = 'block';
-  stepsDiv.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Starting full flow — buy, attest, verify, receipt...</div>';
+  stepsDiv.innerHTML = '';
   resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+  const spinEl = demoStep('spinner', 'Purchasing 10% share on Sepolia...', 'Sending transaction to blockchain. This usually takes 15-30 seconds.');
+  stepsDiv.appendChild(spinEl);
   try {
-    const r = await fetch(API + '/demo/run', { method: 'POST' });
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
+    const buyR = await fetch(API + '/demo/buy', { method: 'POST' });
+    const buyD = await buyR.json();
+    if (buyD.error) throw new Error(buyD.error);
+    spinEl.remove();
+    stepsDiv.appendChild(demoStep('done', 'Purchased 10% Share (Token #' + buyD.tokenId + ')', 'Confirmed in block ' + buyD.blockNumber + ' on Sepolia', buyD.etherscan));
+    btnText.textContent = 'Verifying ownership...';
 
-    stepsDiv.innerHTML = '';
-    const addStep = (icon, title, detail, link) => {
-      const el = document.createElement('div');
-      el.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:0.75rem;transition:all 0.3s';
-      el.innerHTML = `<div style="width:28px;height:28px;background:${icon === 'done' ? 'var(--accent)' : icon === 'failed' ? 'var(--red)' : 'var(--border)'};border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.65rem;color:#fff;font-weight:600">${icon === 'done' ? '\u2713' : icon === 'failed' ? '\u2717' : '...'}</div><div style="flex:1"><div style="font-weight:600;font-size:0.85rem;margin-bottom:0.25rem">${title}</div><div style="font-size:0.75rem;color:var(--muted);line-height:1.5">${detail}</div>${link ? `<a href="${link}" target="_blank" style="font-size:0.7rem;color:var(--accent);text-decoration:none;margin-top:0.35rem;display:inline-block">View on Explorer</a>` : ''}</div>`;
-      stepsDiv.appendChild(el);
-    };
+    const spinEl2 = demoStep('spinner', 'Waiting for Attestcoin attestors...', 'Attestors are observing Ethereum and reaching consensus. This usually takes ~8-10 minutes.');
+    stepsDiv.appendChild(spinEl2);
 
-    for (const step of d.steps) {
-      if (step.step === 'buy') {
-        addStep('done', `Purchased 10% Share (Token #${step.tokenId})`, `Block ${step.blockNumber} on Sepolia`, step.etherscan);
-      } else if (step.step === 'attest') {
-        addStep(step.status === 'done' ? 'done' : 'failed', 'Attestation Complete', step.message);
-      } else if (step.step === 'precompile') {
-        addStep(step.status === 'done' ? 'done' : 'failed', 'BlockProver Verification', step.message);
-      } else if (step.step === 'verify') {
-        addStep('done', `Ownership Verified — Receipt #${step.receiptId}`, `Before: ${step.beforeVerified} → After: ${step.afterVerified}`, step.blockscout);
-      } else if (step.step === 'error') {
-        addStep('failed', 'Error', step.message);
-      }
+    let verified = false;
+    for (let i = 0; i < 60; i++) {
+      try {
+        const vR = await fetch(API + '/demo/verify', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ txHash: buyD.txHash, tokenId: buyD.tokenId }) });
+        if (vR.ok) {
+          const vD = await vR.json();
+          if (vD.success) {
+            spinEl2.remove();
+            stepsDiv.appendChild(demoStep('done', 'Attestation Complete', 'Attestcoin attestors reached consensus on the Ethereum block'));
+            stepsDiv.appendChild(demoStep('done', 'BlockProver Verification', 'Proof verified by Creditcoin native precompile'));
+            stepsDiv.appendChild(demoStep('done', 'Ownership Verified \u2014 Receipt #' + vD.receiptId, 'Before: ' + vD.beforeVerified + ' \u2192 After: ' + vD.afterVerified, vD.blockscout));
+            verified = true;
+            break;
+          }
+        }
+      } catch {}
+      const mins = Math.floor((i * 15) / 60);
+      const secs = (i * 15) % 60;
+      spinEl2.querySelector('div:last-child').innerHTML = '<div style="font-weight:600;font-size:0.85rem;margin-bottom:0.25rem">Waiting for Attestcoin attestors... (' + mins + ':' + String(secs).padStart(2,'0') + ')</div><div style="font-size:0.75rem;color:var(--muted);line-height:1.5">Attestors are observing Ethereum and reaching consensus. This usually takes ~8-10 minutes.</div>';
+      await new Promise(r => setTimeout(r, 15000));
     }
-
-    btnText.textContent = 'Demo Complete';
-    btnSub.textContent = '';
+    if (!verified) {
+      spinEl2.remove();
+      stepsDiv.appendChild(demoStep('failed', 'Attestation timed out', 'Took longer than 15 minutes. The purchase is on-chain \u2014 you can verify later.'));
+    }
+    btnText.textContent = verified ? 'Demo Complete' : 'Demo Incomplete';
     btn.style.opacity = '1';
     btn.style.background = 'var(--accent)';
   } catch(e) {
-    stepsDiv.innerHTML = `<div style="color:var(--red);font-size:0.85rem;padding:1rem">Error: ${e.message}</div>`;
+    stepsDiv.appendChild(demoStep('failed', 'Error', e.message));
     btnText.textContent = 'Try Again';
-    btnSub.textContent = '';
     btn.disabled = false;
     btn.style.opacity = '1';
   }
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </script>
 </body>
 </html>
+
