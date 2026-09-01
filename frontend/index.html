@@ -767,12 +767,14 @@ async function loadTiers() {
   try {
     const r = await fetch(API + "/property");
     const data = await r.json();
+    // Only show supply data if this property matches the on-chain contract
+    const isOnChain = currentProperty && currentProperty.name === data.name;
     if (data.tiers && data.tiers.length > 0) {
       document.getElementById("tierOptions").innerHTML = data.tiers.map(t => `
         <button class="tier-btn" onclick="selectTier(${t.tier}, ${t.price})" id="tier-${t.tier}">
           <div>
             <div class="tier-pct">${t.tier === 100 ? "Full Ownership" : t.tier + "% Share"}</div>
-            <div class="tier-stock">${t.supply}/${t.max} sold</div>
+            <div class="tier-stock">${isOnChain ? t.supply + "/" + t.max + " sold" : "Available"}</div>
           </div>
           <div class="tier-price">$${Number(t.price).toLocaleString()}</div>
         </button>
