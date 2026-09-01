@@ -92,7 +92,7 @@ contract VerifiedShare is ERC721, ERC721URIStorage, Ownable {
      *         Only callable by the contract owner (the ASC).
      */
     function flagStale(uint256 tokenId) external onlyOwner {
-        require(!_isOwnerOf(tokenId), "Token does not exist");
+        require(_isOwnerOf(tokenId), "Token does not exist");
         require(!isStale[tokenId], "Already stale");
         isStale[tokenId] = true;
         emit ReceiptFlaggedStale(tokenId, msg.sender);
@@ -102,7 +102,7 @@ contract VerifiedShare is ERC721, ERC721URIStorage, Ownable {
      * @notice Mark a receipt as superseded by a newer proof.
      */
     function markSuperseded(uint256 tokenId) external onlyOwner {
-        require(!_isOwnerOf(tokenId), "Token does not exist");
+        require(_isOwnerOf(tokenId), "Token does not exist");
         isSuperseded[tokenId] = true;
     }
 

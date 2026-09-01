@@ -139,7 +139,7 @@ contract OwnershipVerifier {
         uint256 assetId,
         bytes32 sourceTxHash,
         bool sourceTxSuccessful
-    ) external {
+    ) external onlyOwner {
         if (!sourceTxSuccessful) revert SourceTxFailed();
 
         bytes32 queryId = keccak256(abi.encodePacked(chainKey, height, wallet, assetId));
@@ -200,7 +200,7 @@ contract OwnershipVerifier {
         bytes32 sourceTxHash,
         bool sourceTxSuccessful,
         bool stillOwner
-    ) external {
+    ) external onlyOwner {
         bytes32 queryId = keccak256(abi.encodePacked(chainKey, height, wallet, assetId));
         if (processedQueries[queryId]) revert QueryAlreadyProcessed();
         processedQueries[queryId] = true;
