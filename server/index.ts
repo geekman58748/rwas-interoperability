@@ -185,8 +185,7 @@ app.post("/api/faucet", async (req, res) => {
     };
     const signed = await s.signTransaction(rawTx);
     const txHash = await sp.send("eth_sendRawTransaction", [signed]);
-    const tx = await sp.waitForTransaction(txHash, 1, 120000);
-    const receipt = await tx.wait();
+    const receipt = await sp.waitForTransaction(txHash, 1, 120000);
     res.json({ success: true, txHash: receipt.hash, amount: "100000" });
   } catch (err: any) {
     res.status(500).json({ error: err.message || String(err) });
