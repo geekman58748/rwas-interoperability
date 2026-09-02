@@ -172,7 +172,20 @@ app.post("/api/faucet", async (req, res) => {
 
     const usdIface = new ethers.Interface(USD_ABI);
     const faucetData = usdIface.encodeFunctionData("faucet", [ethers.parseEther("100000")]);
-    const tx = await s.sendTransaction({ to: USD_ADDRESS, data: faucetData, gasLimit: 100000 });
+    // Sign + raw RPC broadcast
+    const nonce = await sp.getTransactionCount(s.address, "pending");
+    const feeData = await sp.getFeeData();
+    const chainId = (await sp.getNetwork()).chainId;
+    const rawTx = {
+      type: 2, chainId: Number(chainId), to: USD_ADDRESS, data: faucetData,
+      gasLimit: BigInt(100000),
+      maxFeePerGas: feeData.maxFeePerGas ?? BigInt(20000000000),
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(2000000000),
+      nonce,
+    };
+    const signed = await s.signTransaction(rawTx);
+    const txHash = await sp.send("eth_sendRawTransaction", [signed]);
+    const tx = await sp.waitForTransaction(txHash, 1, 120000);
     const receipt = await tx.wait();
     res.json({ success: true, txHash: receipt.hash, amount: "100000" });
   } catch (err: any) {
@@ -206,53 +219,43 @@ app.post("/api/buy", async (req, res) => {
       return res.status(400).json({ error: `Tier ${tierNum} has zero price — check contract state` });
     }
 
-    // Approve USD spending — manual encode to avoid ethers v6 encoding bug
+    // Helper: sign + broadcast via raw RPC (bypasses ethers broadcastTransaction bug)
+    const signAndSend = async (to: string, data: string, gasLimit: bigint) => {
+      const nonce = await sp.getTransactionCount(s.address, "pending");
+      const feeData = await sp.getFeeData();
+      const chainId = (await sp.getNetwork()).chainId;
+      const rawTx = {
+        type: 2, chainId: Number(chainId), to, data, gasLimit,
+        maxFeePerGas: feeData.maxFeePerGas ?? BigInt(20000000000),
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(2000000000),
+        nonce,
+      };
+      const signed = await s.signTransaction(rawTx);
+      const txHash = await sp.send("eth_sendRawTransaction", [signed]);
+      return sp.waitForTransaction(txHash, 1, 120000);
+    };
+
+    // Step 1: Approve USD spending
     const usdIface = new ethers.Interface(USD_ABI);
     const approveData = usdIface.encodeFunctionData("approve", [ASSET_ADDRESS, price]);
-    console.log(`  Approve data length: ${approveData.length}, data: ${approveData.slice(0, 20)}...`);
-    const approveTx = await s.sendTransaction({
-      to: USD_ADDRESS,
-      data: approveData,
-      gasLimit: 100000,
-    });
-    const approveReceipt = await approveTx.wait();
+    console.log(`  Approve: ${approveData}`);
+    const approveReceipt = await signAndSend(USD_ADDRESS, approveData, BigInt(100000));
     console.log(`  Approve TX: ${approveReceipt?.hash}, status: ${approveReceipt?.status}`);
     if (approveReceipt?.status !== 1) {
       return res.status(500).json({ error: "USD approve failed on-chain" });
     }
 
-    // Buy share — bypass ethers Contract class entirely
-    // Use admin mint() since server wallet owns the contract
+    // Step 2: Buy share
     const assetIface = new ethers.Interface(ASSET_ABI);
-    const mintData = assetIface.encodeFunctionData("mint", [s.address, tierNum]);
-    console.log(`  Mint data: ${mintData}`);
-    console.log(`  Mint: tier=${tierNum} wallet=${s.address} contract=${ASSET_ADDRESS}`);
+    const buyData = assetIface.encodeFunctionData("buyShare", [tierNum]);
+    console.log(`  BuyShare: ${buyData}`);
+    const receipt = await signAndSend(ASSET_ADDRESS, buyData, BigInt(500000));
+    console.log(`  Buy TX: ${receipt?.hash}, status: ${receipt?.status}`);
+    if (receipt?.status !== 1) {
+      return res.status(500).json({ error: `buyShare reverted on-chain — check tier ${tierNum}` });
+    }
 
-    // Sign with ethers but broadcast via raw JSON-RPC to bypass ethers broadcast bug
-    const nonce = await sp.getTransactionCount(s.address, "pending");
-    const feeData = await sp.getFeeData();
-    const chainId = (await sp.getNetwork()).chainId;
-    const tx = {
-      type: 2,
-      chainId: Number(chainId),
-      to: ASSET_ADDRESS,
-      data: mintData,
-      gasLimit: BigInt(500000),
-      maxFeePerGas: feeData.maxFeePerGas ?? BigInt(20000000000),
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(2000000000),
-      nonce: nonce,
-    };
-    console.log(`  TX to sign:`, JSON.stringify({ to: tx.to, data: tx.data, type: tx.type }));
-    const signedTx = await s.signTransaction(tx);
-    console.log(`  Signed tx (full): ${signedTx}`);
-    console.log(`  Signed tx length: ${signedTx.length}`);
-    // Broadcast via raw JSON-RPC call
-    const txHash = await sp.send("eth_sendRawTransaction", [signedTx]);
-    console.log(`  TX hash from RPC: ${txHash}`);
-    const receipt = await sp.waitForTransaction(txHash, 1, 120000);
-    console.log(`  Mint TX: ${receipt?.hash}, status: ${receipt?.status}`);
-
-    // Parse event using interface (not contract instance)
+    // Parse event
     let tokenId = null;
     for (const log of receipt.logs) {
       try {
@@ -609,35 +612,37 @@ app.post("/api/demo/buy", async (_req, res) => {
     console.log(`  Demo buy: tier=25 price=${price} signer=${ss.address} asset=${ASSET_ADDRESS}`);
     console.log(`  Provider chainId: ${(await sp.getNetwork()).chainId}`);
 
-    // Manual encode to avoid ethers v6 Contract class encoding bug
+    // Helper: sign + raw RPC broadcast
+    const signAndSend = async (to: string, data: string, gasLimit: bigint) => {
+      const nonce = await sp.getTransactionCount(ss.address, "pending");
+      const feeData = await sp.getFeeData();
+      const chainId = (await sp.getNetwork()).chainId;
+      const rawTx = {
+        type: 2, chainId: Number(chainId), to, data, gasLimit,
+        maxFeePerGas: feeData.maxFeePerGas ?? BigInt(20000000000),
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(2000000000),
+        nonce,
+      };
+      const signed = await ss.signTransaction(rawTx);
+      const h = await sp.send("eth_sendRawTransaction", [signed]);
+      return sp.waitForTransaction(h, 1, 120000);
+    };
+
+    // Step 1: Approve
     const usdIface = new ethers.Interface(USD_ABI);
     const approveData = usdIface.encodeFunctionData("approve", [ASSET_ADDRESS, price]);
-    console.log(`  Demo approve data length: ${approveData.length}`);
-    const approveTx = await ss.sendTransaction({ to: USD_ADDRESS, data: approveData, gasLimit: 100000 });
-    const approveReceipt = await approveTx.wait();
+    console.log(`  Demo approve: ${approveData}`);
+    const approveReceipt = await signAndSend(USD_ADDRESS, approveData, BigInt(100000));
     console.log(`  Demo approve TX: ${approveReceipt?.hash}, status: ${approveReceipt?.status}`);
     if (approveReceipt?.status !== 1) {
       return res.status(500).json({ error: "USD approve failed on-chain" });
     }
 
+    // Step 2: Buy share
     const assetIface = new ethers.Interface(ASSET_ABI);
     const buyData = assetIface.encodeFunctionData("buyShare", [25]);
-    console.log(`  Demo buy data: ${buyData}`);
-    // Raw transaction to bypass ethers v6 Wallet.sendTransaction data-stripping bug
-    const nonce = await sp.getTransactionCount(ss.address, "pending");
-    const feeData = await sp.getFeeData();
-    const chainId = (await sp.getNetwork()).chainId;
-    const rawTx = {
-      type: 2, chainId: Number(chainId), to: ASSET_ADDRESS, data: buyData,
-      gasLimit: 500000n,
-      maxFeePerGas: feeData.maxFeePerGas || 20000000000n,
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas || 2000000000n,
-      nonce,
-    };
-    console.log(`  Demo raw tx data: ${rawTx.data}`);
-    const signedTx = await ss.signTransaction(rawTx);
-    const txResp = await sp.broadcastTransaction(signedTx);
-    const buyReceipt = await txResp.wait();
+    console.log(`  Demo buy: ${buyData}`);
+    const buyReceipt = await signAndSend(ASSET_ADDRESS, buyData, BigInt(500000));
     console.log(`  Demo buy TX: ${buyReceipt?.hash}, status: ${buyReceipt?.status}`);
     let tokenId = "0";
     for (const log of buyReceipt.logs) {
