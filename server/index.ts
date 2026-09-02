@@ -228,7 +228,7 @@ app.post("/api/buy", async (req, res) => {
     console.log(`  Mint data: ${mintData}`);
     console.log(`  Mint: tier=${tierNum} wallet=${s.address} contract=${ASSET_ADDRESS}`);
 
-    // Build raw EIP-1559 transaction
+    // Sign with ethers but broadcast via raw JSON-RPC to bypass ethers broadcast bug
     const nonce = await sp.getTransactionCount(s.address, "pending");
     const feeData = await sp.getFeeData();
     const chainId = (await sp.getNetwork()).chainId;
@@ -242,11 +242,14 @@ app.post("/api/buy", async (req, res) => {
       maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(2000000000),
       nonce: nonce,
     };
-    console.log(`  TX object:`, JSON.stringify({ to: tx.to, data: tx.data, type: tx.type, chainId: tx.chainId, nonce: tx.nonce }));
+    console.log(`  TX to sign:`, JSON.stringify({ to: tx.to, data: tx.data, type: tx.type }));
     const signedTx = await s.signTransaction(tx);
-    console.log(`  Signed tx hex length: ${signedTx.length}, starts with: ${signedTx.slice(0, 20)}`);
-    const txResponse = await sp.broadcastTransaction(signedTx);
-    const receipt = await txResponse.wait();
+    console.log(`  Signed tx (full): ${signedTx}`);
+    console.log(`  Signed tx length: ${signedTx.length}`);
+    // Broadcast via raw JSON-RPC call
+    const txHash = await sp.send("eth_sendRawTransaction", [signedTx]);
+    console.log(`  TX hash from RPC: ${txHash}`);
+    const receipt = await sp.waitForTransaction(txHash, 1, 120000);
     console.log(`  Mint TX: ${receipt?.hash}, status: ${receipt?.status}`);
 
     // Parse event using interface (not contract instance)
