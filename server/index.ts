@@ -221,20 +221,31 @@ app.post("/api/buy", async (req, res) => {
       return res.status(500).json({ error: "USD approve failed on-chain" });
     }
 
-    // Buy share — manual encode to avoid ethers v6 encoding bug
+    // Buy share — use raw eth_sendTransaction to bypass ethers v6 Contract/Wallet bug
     const assetIface = new ethers.Interface(ASSET_ABI);
     const buyData = assetIface.encodeFunctionData("buyShare", [tierNum]);
-    console.log(`  Buy data length: ${buyData.length}, data: ${buyData.slice(0, 20)}...`);
-    console.log(`  Buy: tier=${tierNum} type=${typeof tierNum} price=${price} wallet=${s.address}`);
-    console.log(`  Contract address: ${ASSET_ADDRESS}`);
-    console.log(`  Signer address: ${s.address}`);
-    console.log(`  Provider network: ${(await sp.getNetwork()).chainId}`);
-    const buyTx = await s.sendTransaction({
+    console.log(`  Buy data: ${buyData}`);
+    console.log(`  Buy: tier=${tierNum} price=${price} wallet=${s.address} contract=${ASSET_ADDRESS}`);
+
+    // Sign and send raw transaction
+    const nonce = await sp.getTransactionCount(s.address, "pending");
+    const feeData = await sp.getFeeData();
+    const chainId = (await sp.getNetwork()).chainId;
+    const rawTx = {
+      type: 2,
+      chainId: Number(chainId),
       to: ASSET_ADDRESS,
       data: buyData,
-      gasLimit: 500000,
-    });
-    const receipt = await buyTx.wait();
+      gasLimit: 500000n,
+      maxFeePerGas: feeData.maxFeePerGas || 20000000000n,
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas || 2000000000n,
+      nonce: nonce,
+    };
+    console.log(`  Raw tx data field: ${rawTx.data}`);
+    const signedTx = await s.signTransaction(rawTx);
+    console.log(`  Signed tx length: ${signedTx.length}`);
+    const txResponse = await sp.broadcastTransaction(signedTx);
+    const receipt = await txResponse.wait();
 
     // Parse event using interface (not contract instance)
     let tokenId = null;
@@ -606,9 +617,22 @@ app.post("/api/demo/buy", async (_req, res) => {
 
     const assetIface = new ethers.Interface(ASSET_ABI);
     const buyData = assetIface.encodeFunctionData("buyShare", [25]);
-    console.log(`  Demo buy data length: ${buyData.length}, data: ${buyData}`);
-    const buyTx = await ss.sendTransaction({ to: ASSET_ADDRESS, data: buyData, gasLimit: 500000 });
-    const buyReceipt = await buyTx.wait();
+    console.log(`  Demo buy data: ${buyData}`);
+    // Raw transaction to bypass ethers v6 Wallet.sendTransaction data-stripping bug
+    const nonce = await sp.getTransactionCount(ss.address, "pending");
+    const feeData = await sp.getFeeData();
+    const chainId = (await sp.getNetwork()).chainId;
+    const rawTx = {
+      type: 2, chainId: Number(chainId), to: ASSET_ADDRESS, data: buyData,
+      gasLimit: 500000n,
+      maxFeePerGas: feeData.maxFeePerGas || 20000000000n,
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas || 2000000000n,
+      nonce,
+    };
+    console.log(`  Demo raw tx data: ${rawTx.data}`);
+    const signedTx = await ss.signTransaction(rawTx);
+    const txResp = await sp.broadcastTransaction(signedTx);
+    const buyReceipt = await txResp.wait();
     console.log(`  Demo buy TX: ${buyReceipt?.hash}, status: ${buyReceipt?.status}`);
     let tokenId = "0";
     for (const log of buyReceipt.logs) {
