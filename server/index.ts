@@ -170,9 +170,9 @@ app.post("/api/faucet", async (req, res) => {
     const { sourceProvider: sp, sepoliaSigner: s } = getProviders();
     if (!s || !USD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
 
-    const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, s);
-    const amount = ethers.parseEther("100000"); // 100k USD
-    const tx = await usd.faucet(amount, { gasLimit: 100000 });
+    const usdIface = new ethers.Interface(USD_ABI);
+    const faucetData = usdIface.encodeFunctionData("faucet", [ethers.parseEther("100000")]);
+    const tx = await s.sendTransaction({ to: USD_ADDRESS, data: faucetData, gasLimit: 100000 });
     const receipt = await tx.wait();
     res.json({ success: true, txHash: receipt.hash, amount: "100000" });
   } catch (err: any) {
@@ -191,25 +191,56 @@ app.post("/api/buy", async (req, res) => {
     const { sourceProvider: sp, sepoliaSigner: s } = getProviders();
     if (!s || !ASSET_ADDRESS || !USD_ADDRESS) return res.status(500).json({ error: "Server not configured" });
 
+    // Validate tier
+    const validTiers = [10, 25, 50, 100];
+    const tierNum = Number(tier);
+    if (!validTiers.includes(tierNum)) {
+      return res.status(400).json({ error: `Invalid tier: ${tier}. Must be one of: ${validTiers.join(', ')}` });
+    }
+
     // Get price (read-only)
     const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
-    const price = await assetRead.tierPrice(tier);
+    const price = await assetRead.tierPrice(tierNum);
+    console.log(`  Price for tier ${tierNum}: ${price.toString()} wei`);
+    if (price === 0n) {
+      return res.status(400).json({ error: `Tier ${tierNum} has zero price — check contract state` });
+    }
 
-    // Approve USD spending
-    const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, s);
-    const approveTx = await usd.approve(ASSET_ADDRESS, price, { gasLimit: 100000 });
-    await approveTx.wait();
+    // Approve USD spending — manual encode to avoid ethers v6 encoding bug
+    const usdIface = new ethers.Interface(USD_ABI);
+    const approveData = usdIface.encodeFunctionData("approve", [ASSET_ADDRESS, price]);
+    console.log(`  Approve data length: ${approveData.length}, data: ${approveData.slice(0, 20)}...`);
+    const approveTx = await s.sendTransaction({
+      to: USD_ADDRESS,
+      data: approveData,
+      gasLimit: 100000,
+    });
+    const approveReceipt = await approveTx.wait();
+    console.log(`  Approve TX: ${approveReceipt?.hash}, status: ${approveReceipt?.status}`);
+    if (approveReceipt?.status !== 1) {
+      return res.status(500).json({ error: "USD approve failed on-chain" });
+    }
 
-    // Buy share (needs signer)
-    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, s);
-    const buyTx = await asset.buyShare(tier, { gasLimit: 500000 });
+    // Buy share — manual encode to avoid ethers v6 encoding bug
+    const assetIface = new ethers.Interface(ASSET_ABI);
+    const buyData = assetIface.encodeFunctionData("buyShare", [tierNum]);
+    console.log(`  Buy data length: ${buyData.length}, data: ${buyData.slice(0, 20)}...`);
+    console.log(`  Buy: tier=${tierNum} type=${typeof tierNum} price=${price} wallet=${s.address}`);
+    console.log(`  Contract address: ${ASSET_ADDRESS}`);
+    console.log(`  Signer address: ${s.address}`);
+    console.log(`  Provider network: ${(await sp.getNetwork()).chainId}`);
+    const buyTx = await s.sendTransaction({
+      to: ASSET_ADDRESS,
+      data: buyData,
+      gasLimit: 500000,
+    });
     const receipt = await buyTx.wait();
 
-    // Parse event
+    // Parse event using interface (not contract instance)
     let tokenId = null;
     for (const log of receipt.logs) {
       try {
-        const parsed = asset.interface.parseLog(log);
+        const parsed = assetIface.parseLog(log);
         if (parsed?.name === "AssetMinted") {
           tokenId = parsed.args.tokenId.toString();
         }
@@ -559,16 +590,30 @@ app.post("/api/demo/buy", async (_req, res) => {
     const WALLET = ss.address;
     const assetRead = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, sp);
     const price = await assetRead.tierPrice(25);
-    const usd = new ethers.Contract(USD_ADDRESS, USD_ABI, ss);
-    const approveTx = await usd.approve(ASSET_ADDRESS, price, { gasLimit: 100000 });
-    await approveTx.wait();
-    const asset = new ethers.Contract(ASSET_ADDRESS, ASSET_ABI, ss);
-    const buyTx = await asset.buyShare(25, { gasLimit: 500000 });
+    console.log(`  Demo buy: tier=25 price=${price} signer=${ss.address} asset=${ASSET_ADDRESS}`);
+    console.log(`  Provider chainId: ${(await sp.getNetwork()).chainId}`);
+
+    // Manual encode to avoid ethers v6 Contract class encoding bug
+    const usdIface = new ethers.Interface(USD_ABI);
+    const approveData = usdIface.encodeFunctionData("approve", [ASSET_ADDRESS, price]);
+    console.log(`  Demo approve data length: ${approveData.length}`);
+    const approveTx = await ss.sendTransaction({ to: USD_ADDRESS, data: approveData, gasLimit: 100000 });
+    const approveReceipt = await approveTx.wait();
+    console.log(`  Demo approve TX: ${approveReceipt?.hash}, status: ${approveReceipt?.status}`);
+    if (approveReceipt?.status !== 1) {
+      return res.status(500).json({ error: "USD approve failed on-chain" });
+    }
+
+    const assetIface = new ethers.Interface(ASSET_ABI);
+    const buyData = assetIface.encodeFunctionData("buyShare", [25]);
+    console.log(`  Demo buy data length: ${buyData.length}, data: ${buyData}`);
+    const buyTx = await ss.sendTransaction({ to: ASSET_ADDRESS, data: buyData, gasLimit: 500000 });
     const buyReceipt = await buyTx.wait();
+    console.log(`  Demo buy TX: ${buyReceipt?.hash}, status: ${buyReceipt?.status}`);
     let tokenId = "0";
     for (const log of buyReceipt.logs) {
       try {
-        const parsed = asset.interface.parseLog(log);
+        const parsed = assetIface.parseLog(log);
         if (parsed?.name === "AssetMinted") tokenId = parsed.args.tokenId.toString();
       } catch {}
     }
