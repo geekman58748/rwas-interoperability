@@ -221,31 +221,33 @@ app.post("/api/buy", async (req, res) => {
       return res.status(500).json({ error: "USD approve failed on-chain" });
     }
 
-    // Buy share — use raw eth_sendTransaction to bypass ethers v6 Contract/Wallet bug
+    // Buy share — bypass ethers Contract class entirely
+    // Use admin mint() since server wallet owns the contract
     const assetIface = new ethers.Interface(ASSET_ABI);
-    const buyData = assetIface.encodeFunctionData("buyShare", [tierNum]);
-    console.log(`  Buy data: ${buyData}`);
-    console.log(`  Buy: tier=${tierNum} price=${price} wallet=${s.address} contract=${ASSET_ADDRESS}`);
+    const mintData = assetIface.encodeFunctionData("mint", [s.address, tierNum]);
+    console.log(`  Mint data: ${mintData}`);
+    console.log(`  Mint: tier=${tierNum} wallet=${s.address} contract=${ASSET_ADDRESS}`);
 
-    // Sign and send raw transaction
+    // Build raw EIP-1559 transaction
     const nonce = await sp.getTransactionCount(s.address, "pending");
     const feeData = await sp.getFeeData();
     const chainId = (await sp.getNetwork()).chainId;
-    const rawTx = {
+    const tx = {
       type: 2,
       chainId: Number(chainId),
       to: ASSET_ADDRESS,
-      data: buyData,
-      gasLimit: 500000n,
-      maxFeePerGas: feeData.maxFeePerGas || 20000000000n,
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas || 2000000000n,
+      data: mintData,
+      gasLimit: BigInt(500000),
+      maxFeePerGas: feeData.maxFeePerGas ?? BigInt(20000000000),
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(2000000000),
       nonce: nonce,
     };
-    console.log(`  Raw tx data field: ${rawTx.data}`);
-    const signedTx = await s.signTransaction(rawTx);
-    console.log(`  Signed tx length: ${signedTx.length}`);
+    console.log(`  TX object:`, JSON.stringify({ to: tx.to, data: tx.data, type: tx.type, chainId: tx.chainId, nonce: tx.nonce }));
+    const signedTx = await s.signTransaction(tx);
+    console.log(`  Signed tx hex length: ${signedTx.length}, starts with: ${signedTx.slice(0, 20)}`);
     const txResponse = await sp.broadcastTransaction(signedTx);
     const receipt = await txResponse.wait();
+    console.log(`  Mint TX: ${receipt?.hash}, status: ${receipt?.status}`);
 
     // Parse event using interface (not contract instance)
     let tokenId = null;
