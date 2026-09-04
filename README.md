@@ -1,4 +1,4 @@
-# AttestRWA — Verified Real World Assets
+# AttestRWA: Verified Real World Assets
 
 > **BUIDL CTC 2026 Fall | RWA Track**
 
