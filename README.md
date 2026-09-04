@@ -141,7 +141,23 @@ ETHEREUM SEPOLIA                          CREDITCOIN TESTNET
 | Smart contract bridge | Native precompile verification |
 
 ---
+## What I'd Build Next (Proposed Extension)
+ 
+Right now the sync only goes one way: Ethereum to Creditcoin. If John sells or transfers his property share on Ethereum, we can re-run the attestation and flag his VerifiedShare receipt as stale, that part works today. But if John repays or transfers the receipt itself on Creditcoin, there's no way for that to reach back and touch the original asset on Ethereum. That's not a bug I missed, it's a hard boundary of what Attestcoin currently supports. Writability, meaning Creditcoin contracts triggering real state changes on Ethereum, is still in development on their roadmap, not live yet.
+ 
+The moment it ships, here's exactly what I'd wire up:
+ 
+**Bidirectional settlement.** Right now `releaseCollateral()` only updates state on Creditcoin. Once writability exists, repaying a loan on Creditcoin should be able to fire a verified instruction back to Ethereum, unlocking or transferring the original asset directly, not just flipping a flag on our side. That closes the loop instead of leaving it as a one-way mirror.
+ 
+**Multi-chain source support.** The whole verification pipeline, Merkle proof, continuity proof, chain key check, replay guard, isn't Ethereum-specific in principle. `chainKey` is already a parameter in the proof, not a hardcoded constant. The moment Attestcoin adds a new source chain, `OwnershipVerifier` should be able to accept proofs from it with zero changes to the core verification logic, just a new allowlisted chain key. That's the whole point of building the check around a chain key parameter instead of assuming Sepolia everywhere.
+ 
+**Batch verification for real portfolios.** Attestcoin supports batch queries sharing one continuity proof, up to 10 at a time. Right now I verify one asset at a time because that's all the demo needed. A real version of this should let someone prove ownership of an entire basket of assets across multiple source transactions in a single call, one continuity proof, multiple Merkle proofs, one mint transaction on Creditcoin instead of one per asset.
+ 
+**Enforce the conditions I'm already computing.** I'll be straight about this one: `mintTimeValid` and `fromApprovedMinter` are computed and stored in the current contract, but nothing reverts if they come back false. That's fine for a hackathon demo where every path is a happy path, but it's the first thing I'd lock down, add the `require()` so the multi-condition check is actually a gate, not just a record.
+ 
+None of this needs a new idea. It's the same proof-first pattern, prove it once, use it anywhere, just extended in the three directions the protocol itself is already headed: writable, multi-chain, and batched. I'm not trying to build a better bridge. I'm trying to make bridges unnecessary for this entire category of asset.
 
+ ---
 ## License
 
 MIT
