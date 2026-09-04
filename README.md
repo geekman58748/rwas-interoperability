@@ -2,7 +2,7 @@
 
 > **BUIDL CTC 2026 Fall | RWA Track**
 
-Prove real-world asset ownership occurred on Ethereum, using Attestcoin's decentralized attestor network — then let a Creditcoin contract trustlessly act on that proof, minting a transferable receipt token. No bridge, no custodian, no centralized oracle.
+Prove real-world asset ownership occurred on Ethereum, using Attestcoin's decentralized attestor network, then let a Creditcoin contract trustlessly act on that proof, minting a transferable receipt token. No bridge, no custodian, no centralized oracle.
 
 ---
 
@@ -10,15 +10,15 @@ Prove real-world asset ownership occurred on Ethereum, using Attestcoin's decent
 
 **Meet Mr. John.**
 
-Mr. John is a DeFi user who loves the concept of real estate tokenization. He's seen the hype — fractional property ownership, on-chain yields, the promise of liquid real-world assets. But he's scared of bridges. Several high-profile bridge hacks have made headlines, and he's not willing to lock his assets in a custodian that could be drained overnight.
+Mr. John is a DeFi user who loves the concept of real estate tokenization. He's seen the hype, fractional property ownership, on-chain yields, the promise of liquid real-world assets. But he's scared of bridges. Several high-profile bridge hacks have made headlines, and he's not willing to lock his assets in a custodian that could be drained overnight.
 
-He purchases a property on Ethereum via the AttestRWA platform — excited about the 8.2% yield and the idea of owning a piece of Manhattan. But soon, he finds himself short of liquidity. He doesn't want to sell his asset or liquidate his position. And even if he wanted to borrow against it, the bridging process is impossible — Ethereum and Creditcoin are different chains with no native way to talk to each other.
+He purchases a property on Ethereum via the AttestRWA platform, excited about the 8.2% yield and the idea of owning a piece of Manhattan. But soon, he finds himself short of liquidity. He doesn't want to sell his asset or liquidate his position. And even if he wanted to borrow against it, the bridging process is impossible, Ethereum and Creditcoin are different chains with no native way to talk to each other.
 
 **Luckily for him, AttestRWA exists.**
 
-AttestRWA allows blockchain interoperability between Ethereum and Creditcoin using Attestcoin's attestation mechanism. Instead of bridging his asset (which would expose it to bridge risk), the platform **proves** his Ethereum ownership to a Creditcoin smart contract using cryptographic attestations. His asset stays on Ethereum — only the proof moves.
+AttestRWA allows blockchain interoperability between Ethereum and Creditcoin using Attestcoin's attestation mechanism. Instead of bridging his asset (which would expose it to bridge risk), the platform **proves** his Ethereum ownership to a Creditcoin smart contract using cryptographic attestations. His asset stays on Ethereum, only the proof moves.
 
-On Creditcoin, a VerifiedShare receipt is minted representing his verified claim. He can now borrow CUSD stablecoins against that receipt — his Ethereum asset never left Ethereum, and his liquidity need is solved. No bridge. No custodian. No trust assumption beyond mathematics.
+On Creditcoin, a VerifiedShare receipt is minted representing his verified claim. He can now borrow CUSD stablecoins against that receipt, his Ethereum asset never left Ethereum, and his liquidity need is solved. No bridge. No custodian. No trust assumption beyond mathematics.
 
 **This is what AttestRWA solves: cross-chain proof of ownership without cross-chain risk.**
 
@@ -26,13 +26,13 @@ On Creditcoin, a VerifiedShare receipt is minted representing his verified claim
 
 ## What This Project Does
 
-We deploy a **mock ERC-721** on Ethereum Sepolia representing fractional ownership of real-world properties. When someone purchases a share, that ownership event is **proven cross-chain** to Creditcoin using the Attestcoin Protocol. Our ASC verifies the proof and mints a **VerifiedShare receipt token** on Creditcoin — a transferable, re-verifiable claim to the Ethereum asset.
+We deploy a **mock ERC-721** on Ethereum Sepolia representing fractional ownership of real-world properties. When someone purchases a share, that ownership event is **proven cross-chain** to Creditcoin using the Attestcoin Protocol. Our ASC verifies the proof and mints a **VerifiedShare receipt token** on Creditcoin, a transferable, re-verifiable claim to the Ethereum asset.
 
 **The receipt is NOT the original asset.** Ethereum remains the source of truth. The Creditcoin receipt is a live, re-verifiable read of that truth.
 
 ### One-Sentence Pitch
 
-> "We prove that a real-world asset ownership event occurred on Ethereum, using Attestcoin's decentralized attestor network — then let a Creditcoin contract trustlessly act on that proof, minting a transferable receipt. No bridge, no custodian, no centralized oracle."
+> "We prove that a real-world asset ownership event occurred on Ethereum, using Attestcoin's decentralized attestor network, then let a Creditcoin contract trustlessly act on that proof, minting a transferable receipt. No bridge, no custodian, no centralized oracle."
 
 ---
 
@@ -40,7 +40,7 @@ We deploy a **mock ERC-721** on Ethereum Sepolia representing fractional ownersh
 
 **No wallet needed. No gas needed. No setup needed.**
 
-Open [rwas-interoperability.onrender.com](https://rwas-interoperability.onrender.com) in any browser, click **"Try Live Demo"** or click any property and hit **"Buy"** — the full flow executes server-side: buy → attest → verify → receipt minted.
+Open [rwas-interoperability.onrender.com](https://rwas-interoperability.onrender.com) in any browser, click **"Try Live Demo"** or click any property and hit **"Buy"**, the full flow executes server-side: buy → attest → verify → receipt minted.
 
 ---
 
@@ -74,7 +74,7 @@ ETHEREUM SEPOLIA                          CREDITCOIN TESTNET
 5. User borrows CUSD against receipt collateral
 ```
 
-**Ethereum remains the source of truth.** The Creditcoin receipt is a live, re-verifiable read of that truth — not a replacement, transfer, or migration of the asset.
+**Ethereum remains the source of truth.** The Creditcoin receipt is a live, re-verifiable read of that truth, not a replacement, transfer, or migration of the asset.
 
 ---
 
@@ -126,50 +126,6 @@ ETHEREUM SEPOLIA                          CREDITCOIN TESTNET
 | Hosting | Render (auto-deploy from GitHub) |
 | Build Tools | Foundry, npm, tsx |
 
----
-
-## Deliverables Checklist
-
-- [x] Working Attestcoin Protocol integration code (actually running)
-- [x] Technical documentation explaining mechanics and the "why"
-- [x] Mock RWA asset contract deployed on Sepolia (PretendAssetShare)
-- [x] Ownership event (mint) triggered on demand via buy flow
-- [x] Attestcoin proof successfully generated via SDK
-- [x] ASC deployed on Creditcoin verifies proof on-chain
-- [x] On-chain state visibly changes (false → true, receipt minted)
-- [x] 7 conditions beyond single flag check (depth requirement)
-- [x] Minimal frontend triggers and displays full flow live
-- [x] One-click gasless demo (no wallet, no gas, no setup)
-- [x] Technical documentation written (DEMO_DOCUMENTATION.txt)
-- [x] Frontend wired to live on-chain data
-- [x] Deployed to testnet (Sepolia + Creditcoin)
-- [x] Receipt token transferable with staleness tracking
-- [x] Borrow flow against verified collateral (CUSD)
-- [x] Cross-chain proof: Ethereum ownership → Creditcoin receipt
-- [x] One-way sync direction documented (Ethereum → Creditcoin)
-- [x] Demo video ready for recording
-
----
-
-## Demo Script
-
-**For judges — one-click demo, no wallet needed:**
-
-1. Open [rwas-interoperability.onrender.com](https://rwas-interoperability.onrender.com)
-2. Click **"Try Live Demo"** on the hero section
-3. Watch: Purchasing → Attestation (8-10 min wait) → Verification → Receipt
-4. Click **"View on Explorer"** links to see TXs on Sepolia and Creditcoin
-
-**For the video recording:**
-
-1. Show landing page — property listings, "How It Works" section
-2. Click Pacific Heights → Select 25% share → Click Buy
-3. Show Sepolia Etherscan TX — ownership event confirmed
-4. Click "Verify on Creditcoin" — block animation with progress
-5. Show attestation completing → receipt minted on Creditcoin
-6. Navigate to Creditcoin Loan page → see verified assets
-7. Select asset → Borrow CUSD → show tokens minted
-8. Say: "No bridge. No custodian. No centralized oracle. Just math."
 
 ---
 
@@ -178,7 +134,7 @@ ETHEREUM SEPOLIA                          CREDITCOIN TESTNET
 | Bridge Risk | Attestcoin Proof |
 |---|---|
 | Asset locked in bridge | Asset stays on Ethereum |
-| Bridge holds custody | No custody — only proof |
+| Bridge holds custody | No custody, only proof |
 | Bridge hack = asset safe | Hack = invalid proof (asset safe) |
 | Single point of failure | Distributed attestors |
 | Centralized relayer | Decentralized consensus |
