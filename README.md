@@ -1,4 +1,4 @@
-# AttestRWA: Verified Real World Assets
+# AttestRWA: Borrow against your real-world assets on any chain, proven, not bridged.
 
 > **BUIDL CTC 2026 Fall | RWA Track**
 
