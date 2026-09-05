@@ -35,7 +35,11 @@ We deploy a **mock ERC-721** on Ethereum Sepolia representing fractional ownersh
 > "We prove that a real-world asset ownership event occurred on Ethereum, using Attestcoin's decentralized attestor network, then let a Creditcoin contract trustlessly act on that proof, minting a transferable receipt. No bridge, no custodian, no centralized oracle."
 
 ---
-
+### Read the Full Story
+ 
+I wrote a longer piece on why I built this, the biomimicry angle behind it, the bugs I found along the way, and where I think Attest could take interoperability next: [Tribalism is Hardcoded Into Existence: Interoperability](https://medium.com/@fwmaxx/tribalism-is-hardcoded-into-existence-interoperability-470fd8d8c7c0)
+ 
+---
 ## Live Demo
 
 **No wallet needed. No gas needed. No setup needed.**
