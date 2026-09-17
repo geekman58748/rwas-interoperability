@@ -44,7 +44,7 @@ I wrote a longer piece on why I built this, the biomimicry angle behind it, the 
 
 **No wallet needed. No gas needed. No setup needed.**
 
-Open [rwas-interoperability.onrender.com](https://rwas-interoperability.onrender.com) in any browser, click **"Try Live Demo"** or click any property and hit **"Buy"**, the full flow executes server-side: buy → attest → verify → receipt minted.
+Open [rwas-interoperability-uvlw.onrender.com](https://rwas-interoperability-uvlw.onrender.com) in any browser, click **"Try Live Demo"** or click any property and hit **"Buy"**, the full flow executes server-side: buy → attest → verify → receipt minted.
 
 ---
 
